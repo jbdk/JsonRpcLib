@@ -1,0 +1,11 @@
+﻿using System;
+
+namespace JsonRpcLib.Server
+{
+    public interface IClient : IDisposable
+    {
+        string Address { get; }
+        int Id { get; }
+        bool IsConnected { get; }
+    }
+}
