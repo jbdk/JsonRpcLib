@@ -32,17 +32,24 @@ namespace SimpleServer
 
         private static void AcceptClient(IAsyncResult ar)
         {
-            // Accept client and get remote ip-address
-            TcpClient client = _listener.EndAcceptTcpClient(ar);
-            IPAddress ipAddress = ( (IPEndPoint)client.Client.RemoteEndPoint ).Address;
+            try
+            {
+                // Accept client and get remote ip-address
+                TcpClient client = _listener.EndAcceptTcpClient(ar);
+                IPAddress ipAddress = ( (IPEndPoint)client.Client.RemoteEndPoint ).Address;
 
-            // Add client to server
-            _server.AttachClient(ipAddress.ToString(), client.GetStream());
+                // Add client to server
+                _server.AttachClient(ipAddress.ToString(), client.GetStream());
 
-            Console.WriteLine($"Client from {ipAddress} connected");
+                Console.WriteLine($"Client from {ipAddress} connected");
 
-            // Accept next client connection
-            _listener.BeginAcceptTcpClient(AcceptClient, null);
+                // Accept next client connection
+                _listener.BeginAcceptTcpClient(AcceptClient, null);
+            }
+            catch (ObjectDisposedException)
+            {
+                // NOP
+            }
         }
     }
 }
