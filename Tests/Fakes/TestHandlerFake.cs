@@ -20,5 +20,10 @@ namespace Tests.Fakes
         public void DefaultArgs(int n, bool b = true)
         {
         }
+
+        public uint UIntTest(uint n)
+        {
+            return n;
+        }
     }
 }

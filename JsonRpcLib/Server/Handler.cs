@@ -77,12 +77,18 @@ namespace JsonRpcLib.Server
                     object result = null;
                     if (notAllArgsAreThere)
                     {
-#if !NET40
-                        // We will never get here on NET40
-                        result = info.Method.Invoke(info.Object,
-                            BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod | BindingFlags.CreateInstance,
-                            null, args, null);
-#endif
+                        // Use reflection invoke instead of delegate because we have optional parameters
+                        if (info.Object != null)
+                        {
+                            // Instance function
+                            result = info.Method.Invoke(info.Object,
+                                BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod | BindingFlags.CreateInstance, null, args, null);
+                        }
+                        else
+                        {
+                            // Static function
+                            result = info.Method.Invoke(null, BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod, null, args, null);
+                        }
                     }
                     else
                     {
@@ -135,11 +141,7 @@ namespace JsonRpcLib.Server
         {
             notAllArgsAreThere = false;
             var p = method.GetParameters();
-#if NET40
-            int neededArgs = p.Length;
-#else
             int neededArgs = p.Count(x => !x.HasDefaultValue);
-#endif
             if (neededArgs > args.Length)
                 throw new JsonRpcException($"Argument count mismatch (Expected at least {neededArgs}, but got only {args.Length}");
 
