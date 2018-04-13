@@ -14,19 +14,20 @@ namespace JsonRpcLib.Server
             public int Id { get; }
             public bool IsConnected { get; private set; }
             public string Address { get; }
-            public Encoding Encoding { get; internal set; }
 
             private readonly Stream _stream;
             private readonly Func<ClientConnection, string, bool> _process;
             private byte[] _buffer = new byte[32];
             private int _receivePosition;
+            private readonly Encoding _encoding;
 
-            public ClientConnection(int id, string address, Stream stream, Func<ClientConnection, string, bool> process)
+            public ClientConnection(int id, string address, Stream stream, Func<ClientConnection, string, bool> process, Encoding encoding)
             {
+                _encoding = encoding ?? throw new ArgumentNullException(nameof(encoding));
                 Id = id;
                 Address = address;
-                _stream = stream;
-                _process = process;
+                _stream = stream ?? throw new ArgumentNullException(nameof(stream));
+                _process = process ?? throw new ArgumentNullException(nameof(process));
                 IsConnected = true;
 
                 BeginRead();
@@ -62,7 +63,7 @@ namespace JsonRpcLib.Server
 
                     if (_receivePosition > 1 && _buffer[_receivePosition - 1] == '\n')
                     {
-                        var message = Encoding.GetString(_buffer, 0, _receivePosition);
+                        var message = _encoding.GetString(_buffer, 0, _receivePosition);
                         if (!_process(this, message))
                         {
                             KillConnection();
@@ -85,7 +86,7 @@ namespace JsonRpcLib.Server
 
                 try
                 {
-                    var bytes = Encoding.GetBytes(data);
+                    var bytes = _encoding.GetBytes(data);
                     _stream.Write(bytes, 0, bytes.Length);
                     return true;
                 }

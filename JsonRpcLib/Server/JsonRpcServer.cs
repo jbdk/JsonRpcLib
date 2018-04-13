@@ -34,7 +34,7 @@ namespace JsonRpcLib.Server
                 throw new ArgumentNullException(nameof(stream));
 
             var id = Interlocked.Increment(ref _nextClientId);
-            var client = new ClientConnection(id, address, stream, ProcessClientMessage) { Encoding = _encoding };
+            var client = new ClientConnection(id, address, stream, ProcessClientMessage, _encoding);
 
             _clients.TryAdd(id, client);
             Debug.WriteLine($"#{id} JsonRpc client added");
