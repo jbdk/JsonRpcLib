@@ -7,7 +7,7 @@ namespace JsonRpcLib.Server
 {
     internal static class Reflection
     {
-        public static Delegate CreateMethod(object instance, MethodInfo method)
+        public static Delegate CreateDelegate(object instance, MethodInfo method)
         {
             if (method == null)
                 throw new ArgumentNullException(nameof(method));
@@ -21,7 +21,7 @@ namespace JsonRpcLib.Server
             return Expression.Lambda(call, parameters).Compile();
         }
 
-        public static Delegate CreateMethod(MethodInfo method)
+        public static Delegate CreateDelegate(MethodInfo method)
         {
             if (method == null)
                 throw new ArgumentNullException(nameof(method));

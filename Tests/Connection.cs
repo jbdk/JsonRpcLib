@@ -57,7 +57,7 @@ namespace Tests
                 using (var client = new TestClient(port))
                 {
                     client.Notify("TestResponse", 1, "abc");
-                    int receivedCount = client.ReceiveData(50);
+                    int receivedCount = client.ReceiveDataWithin(50);
 
                     receivedCount.Should().Be(0);
                     server.LastMessageReceived.Should().NotBeNull();

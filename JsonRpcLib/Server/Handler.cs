@@ -11,7 +11,7 @@ namespace JsonRpcLib.Server
     {
         private class HandlerInfo
         {
-            public object Object { get; internal set; }
+            public object Instance { get; internal set; }
             public MethodInfo Method { get; internal set; }
             public Delegate Call { get; internal set; }
         }
@@ -26,21 +26,7 @@ namespace JsonRpcLib.Server
                 throw new ArgumentException("Prefix string can not contain any whitespace");
 
             foreach (var m in handler.GetType().GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public))
-            {
-                var name = prefix + m.Name;
-                if (_handlers.TryGetValue(name, out var existing))
-                {
-                    throw new JsonRpcException($"The method '{name}' is already handled by the class {existing.Object.GetType().Name}");
-                }
-
-                var info = new HandlerInfo {
-                    Object = handler,
-                    Method = m,
-                    Call = Reflection.CreateMethod(handler, m)
-                };
-                _handlers.TryAdd(name, info);
-                Debug.WriteLine($"Added handler for '{name}' as {handler.GetType().Name}.{m.Name}");
-            }
+                RegisterMethod(handler.GetType().Name, prefix, m, handler);
         }
 
         public void RegisterHandlers(Type type, string prefix = "")
@@ -51,20 +37,24 @@ namespace JsonRpcLib.Server
                 throw new ArgumentException("Prefix string can not contain any whitespace");
 
             foreach (var m in type.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.Public))
-            {
-                var name = prefix + m.Name;
-                if (_handlers.TryGetValue(name, out var existing))
-                {
-                    throw new JsonRpcException($"The method '{name}' is already handled by the class {existing.Object.GetType().Name}");
-                }
+                RegisterMethod(type.Name, prefix, m);
+        }
 
-                var info = new HandlerInfo {
-                    Method = m,
-                    Call = Reflection.CreateMethod(m)
-                };
-                _handlers.TryAdd(name, info);
-                Debug.WriteLine($"Added handler for '{name}' as static {type.Name}.{m.Name}");
+        private void RegisterMethod(string className, string prefix, MethodInfo m, object instance = null)
+        {
+            var name = prefix + m.Name;
+            if (_handlers.TryGetValue(name, out var existing))
+            {
+                throw new JsonRpcException($"The method '{name}' is already handled by the class {existing.Instance.GetType().Name}");
             }
+
+            var info = new HandlerInfo {
+                Instance = instance,
+                Method = m,
+                Call = instance != null ? Reflection.CreateDelegate(instance, m) : Reflection.CreateDelegate(m)
+            };
+            _handlers.TryAdd(name, info);
+            Debug.WriteLine($"Added handler for '{name}' on {className}.{m.Name}");
         }
 
         internal void ExecuteHandler(ClientConnection client, int id, string method, object[] args)
@@ -73,81 +63,105 @@ namespace JsonRpcLib.Server
             {
                 try
                 {
+                    // Make sure arguments are correct for the function call
                     bool hasOptionalParameters = false;
                     if (args != null)
-                    {
-                        FixupArgs(info.Method, ref args, out hasOptionalParameters);
-                    }
+                        PrepareArguments(info.Method, ref args, out hasOptionalParameters);
 
-                    object result = null;
-                    if (hasOptionalParameters)
-                    {
-                        // Use reflection invoke instead of delegate because we have optional parameters
-                        if (info.Object != null)
-                        {
-                            // Instance function
-                            result = info.Method.Invoke(info.Object,
-                                BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod | BindingFlags.CreateInstance, null, args, null);
-                        }
-                        else
-                        {
-                            // Static function
-                            result = info.Method.Invoke(null, BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod, null, args, null);
-                        }
-                    }
-                    else
-                    {
-                        result = info.Call.DynamicInvoke(args);
-                    }
-
+                    // Now actually do the actual function call on the users class
+                    object result = Invoke(args, info, hasOptionalParameters);
                     if (id == -1)
                         return;     // Was a notify, so don't reply
 
+                    // Reply to client
                     if (info.Method.ReturnParameter.ParameterType != typeof(void))
                     {
-                        var response = new Response<object>() {
-                            Id = id,
-                            Result = result
-                        };
-                        var json = Serializer.Serialize(response);
-                        client.Write(json);
+                        SendResponse(client, id, result);
                     }
                     else
                     {
-                        var response = new Response() {
-                            Id = id
-                        };
-                        var json = Serializer.Serialize(response);
-                        client.Write(json);
+                        SendResponse(client, id);
                     }
                 }
                 catch (Exception ex)
                 {
-                    var response = new Response() {
-                        Id = id,
-                        Error = new Error() { Code = -1, Message = $"Handler '{method}' threw an exception: {ex.Message}" }
-                    };
-                    var json = Serializer.Serialize(response);
-                    client.Write(json);
+                    SendError(client, id, $"Handler '{method}' threw an exception: {ex.Message}");
                 }
             }
             else
             {
-                //
-                // Unknown method
-                //
-                var response = new Response() {
-                    Id = id,
-                    Error = new Error() { Code = -32601, Message = $"Unknown method '{method}'" }
-                };
-                var json = Serializer.Serialize(response);
-                client.Write(json);
+                SendUnknownMethodError(client, id, method);
             }
         }
 
-        private void FixupArgs(MethodInfo method, ref object[] args, out bool notAllArgsAreThere)
+        private static void SendError(ClientConnection client, int id, string message)
         {
-            notAllArgsAreThere = false;
+            var response = new Response() {
+                Id = id,
+                Error = new Error() { Code = -1, Message = message }
+            };
+            var json = Serializer.Serialize(response);
+            client.Write(json);
+        }
+
+        private static void SendUnknownMethodError(ClientConnection client, int id, string method)
+        {
+            var response = new Response() {
+                Id = id,
+                Error = new Error() { Code = -32601, Message = $"Unknown method '{method}'" }
+            };
+            var json = Serializer.Serialize(response);
+            client.Write(json);
+        }
+
+        private static void SendResponse(ClientConnection client, int id)
+        {
+            var response = new Response() {
+                Id = id
+            };
+            var json = Serializer.Serialize(response);
+            client.Write(json);
+        }
+
+        private static void SendResponse(ClientConnection client, int id, object result)
+        {
+            var response = new Response<object>() {
+                Id = id,
+                Result = result
+            };
+            var json = Serializer.Serialize(response);
+            client.Write(json);
+        }
+
+        private static object Invoke(object[] args, HandlerInfo info, bool hasOptionalParameters)
+        {
+            object result = null;
+            if (hasOptionalParameters)
+            {
+                // Use reflection invoke instead of delegate because we have optional parameters
+                if (info.Instance != null)
+                {
+                    // Instance function
+                    result = info.Method.Invoke(info.Instance,
+                        BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod | BindingFlags.CreateInstance, null, args, null);
+                }
+                else
+                {
+                    // Static function
+                    result = info.Method.Invoke(null, BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod, null, args, null);
+                }
+            }
+            else
+            {
+                result = info.Call.DynamicInvoke(args);
+            }
+
+            return result;
+        }
+
+        private void PrepareArguments(MethodInfo method, ref object[] args, out bool hasOptionalParameters)
+        {
+            hasOptionalParameters = false;
             var p = method.GetParameters();
             int neededArgs = p.Count(x => !x.HasDefaultValue);
             if (neededArgs > args.Length)
@@ -156,19 +170,26 @@ namespace JsonRpcLib.Server
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] == null)
-                    continue;
+                    continue;  // Skip
+
                 var at = args[i].GetType();
                 if (at == p[i].ParameterType)
-                    continue;
+                    continue;  // Already the right type
+
                 if (at.IsPrimitive)
+                {
+                    // Cast primitives
                     args[i] = Convert.ChangeType(args[i], p[i].ParameterType);
+                }
                 else if (at == typeof(string))
                 {
+                    // Convert string to TimeSpan
                     if (p[i].ParameterType == typeof(TimeSpan))
                         args[i] = TimeSpan.Parse((string)args[i]);
                 }
                 else if (at == typeof(JArray))
                 {
+                    // Convert array to a real typed array
                     var a = args[i] as JArray;
                     args[i] = a.ToObject(p[i].ParameterType);
                 }
@@ -176,8 +197,9 @@ namespace JsonRpcLib.Server
 
             if (args.Length < p.Length)
             {
+                // Missing optional arguments are set to Type.Missing
                 args = args.Concat(Enumerable.Repeat(Type.Missing, p.Length - args.Length)).ToArray();
-                notAllArgsAreThere = true;
+                hasOptionalParameters = true;
             }
         }
     }
