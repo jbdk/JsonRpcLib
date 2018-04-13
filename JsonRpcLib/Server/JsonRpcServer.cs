@@ -18,6 +18,7 @@ namespace JsonRpcLib.Server
         private bool _disposed;
         private readonly ConcurrentDictionary<int, ClientConnection> _clients = new ConcurrentDictionary<int, ClientConnection>();
         public IList<IClient> Clients => _clients.Values.ToList<IClient>();
+        protected Action<IClient, string> IncommingMessageHook { get; set; }
 
         /// <summary>
         /// Create a new JsorRpcServer instance
@@ -46,6 +47,7 @@ namespace JsonRpcLib.Server
             if (data == null)
             {
                 HandleDisconnect(client);
+                IncommingMessageHook?.Invoke(client, data);
                 return false;
             }
 
@@ -61,6 +63,7 @@ namespace JsonRpcLib.Server
                 Debug.WriteLine("Exception in JsonRpcServer.ProcessClientMessage(): " + ex.Message);
             }
 
+            IncommingMessageHook?.Invoke(client, data);
             return true;    // Continue receiving data from client
         }
 
@@ -72,7 +75,7 @@ namespace JsonRpcLib.Server
             Debug.WriteLine($"#{client.Id} JsonRpc client removed");
         }
 
-        public void Dispose()
+        public virtual void Dispose()
         {
             if (_disposed)
                 return;

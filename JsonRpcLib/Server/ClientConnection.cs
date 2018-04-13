@@ -63,7 +63,9 @@ namespace JsonRpcLib.Server
 
                     if (_receivePosition > 1 && _buffer[_receivePosition - 1] == '\n')
                     {
-                        var message = _encoding.GetString(_buffer, 0, _receivePosition);
+                        var message = _encoding.GetString(_buffer, 0, _receivePosition - 1);
+                        //var message = Encoding.ASCII.GetString(_buffer, 0, _receivePosition).Trim();
+
                         if (!_process(this, message))
                         {
                             KillConnection();
@@ -86,7 +88,7 @@ namespace JsonRpcLib.Server
 
                 try
                 {
-                    var bytes = _encoding.GetBytes(data);
+                    var bytes = _encoding.GetBytes(data + "\n");
                     _stream.Write(bytes, 0, bytes.Length);
                     return true;
                 }

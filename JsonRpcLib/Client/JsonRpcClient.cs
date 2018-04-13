@@ -14,8 +14,8 @@ namespace JsonRpcLib.Client
         private int _nextId;
         private bool _captureMode;
         private TimeSpan _timeout = TimeSpan.FromSeconds(5);
-        private readonly StreamWriter _writer;
-        private readonly StreamReader _reader;
+        private readonly Encoding _encoding;
+        protected StreamReader Reader { get; }
 
         /// <summary>
         /// Get/Set read and write timeout 
@@ -25,17 +25,16 @@ namespace JsonRpcLib.Client
             get => _timeout;
             set {
                 _timeout = value;
-                _baseStream.ReadTimeout = _baseStream.WriteTimeout = value.Milliseconds;
+                _baseStream.ReadTimeout = _baseStream.WriteTimeout = (int)value.TotalMilliseconds;
             }
         }
 
         public JsonRpcClient(Stream baseStream, Encoding encoding = null)
         {
             _baseStream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
-            _baseStream.ReadTimeout = _baseStream.WriteTimeout = Timeout.Milliseconds;
-            encoding = encoding ?? Encoding.UTF8;
-            _writer = new StreamWriter(_baseStream, encoding) { AutoFlush = true, NewLine = "\n" };
-            _reader = new StreamReader(_baseStream, encoding);
+            _baseStream.ReadTimeout = _baseStream.WriteTimeout = (int)Timeout.TotalMilliseconds;
+            _encoding = encoding ?? Encoding.UTF8;
+            Reader = new StreamReader(_baseStream, _encoding);
         }
 
         public void Notify(string method, params object[] args)
@@ -51,7 +50,7 @@ namespace JsonRpcLib.Client
             };
 
             string json = Serializer.Serialize(request);
-            _writer.WriteLine(json);
+            WriteLine(json);
         }
 
         public void Invoke(string method)
@@ -67,10 +66,10 @@ namespace JsonRpcLib.Client
             };
 
             string json = Serializer.Serialize(request);
-            _reader.DiscardBufferedData();
-            _writer.WriteLine(json);
+            Reader.DiscardBufferedData();
+            WriteLine(json);
 
-            json = _reader.ReadLine();
+            json = Reader.ReadLine();
             var response = Serializer.Deserialize<Response>(json);
             if (response.Error != null)
                 throw new JsonRpcException(response.Error);
@@ -92,10 +91,10 @@ namespace JsonRpcLib.Client
             };
 
             string json = Serializer.Serialize(request);
-            _reader.DiscardBufferedData();
-            _writer.WriteLine(json);
+            Reader.DiscardBufferedData();
+            WriteLine(json);
 
-            json = _reader.ReadLine();
+            json = Reader.ReadLine();
             var response = Serializer.Deserialize<Response<T>>(json);
             if (response.Error != null)
                 throw new JsonRpcException(response.Error);
@@ -103,6 +102,12 @@ namespace JsonRpcLib.Client
                 throw new JsonRpcException($"Request/response id mismatch. Expected {request.Id} but got {response.Id}");
 
             return response.Result;
+        }
+
+        private void WriteLine(string json)
+        {
+            var bytes = _encoding.GetBytes(json + "\n");
+            _baseStream.Write(bytes, 0, bytes.Length);
         }
 
         /// <summary>
@@ -134,7 +139,7 @@ namespace JsonRpcLib.Client
             {
                 while (true)
                 {
-                    var s = _reader.ReadLine();
+                    var s = Reader.ReadLine();
                     if (string.IsNullOrEmpty(s))
                         break;
                     if (!handler(s))
@@ -153,7 +158,7 @@ namespace JsonRpcLib.Client
         /// <summary>
         /// Dispose the base stream (cancels all pending reads). After that, the instance can not be re-used.
         /// </summary>
-        public void Dispose()
+        public virtual void Dispose()
         {
             if (_disposed)
                 return;
