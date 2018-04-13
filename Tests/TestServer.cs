@@ -16,7 +16,7 @@ namespace Tests
         {
             IncommingMessageHook = (_, s) => LastMessageReceived = s;
 
-            RegisterHandlers(typeof(StaticHandler));
+            Bind<StaticHandler>();
 
             _listener = new TcpListener(IPAddress.Loopback, port);
             _listener.Start();
@@ -46,7 +46,7 @@ namespace Tests
             base.Dispose();
         }
 
-        internal static class StaticHandler
+        internal class StaticHandler
         {
             public static TestResponseData TestResponse(int n = 0, string s = "")
             {

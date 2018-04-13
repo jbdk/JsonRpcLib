@@ -18,7 +18,7 @@ namespace JsonRpcLib.Server
 
         readonly ConcurrentDictionary<string, HandlerInfo> _handlers = new ConcurrentDictionary<string, HandlerInfo>();
 
-        public void RegisterHandlers(object handler, string prefix = "")
+        public void Bind(object handler, string prefix = "")
         {
             if (handler == null)
                 throw new ArgumentNullException(nameof(handler));
@@ -29,13 +29,12 @@ namespace JsonRpcLib.Server
                 RegisterMethod(handler.GetType().Name, prefix, m, handler);
         }
 
-        public void RegisterHandlers(Type type, string prefix = "")
+        public void Bind<T>(string prefix = "")
         {
-            if (type == null)
-                throw new ArgumentNullException(nameof(type));
             if (prefix.Any(c => char.IsWhiteSpace(c)))
                 throw new ArgumentException("Prefix string can not contain any whitespace");
 
+            var type = typeof(T);
             foreach (var m in type.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.Public))
                 RegisterMethod(type.Name, prefix, m);
         }
@@ -44,9 +43,7 @@ namespace JsonRpcLib.Server
         {
             var name = prefix + m.Name;
             if (_handlers.TryGetValue(name, out var existing))
-            {
                 throw new JsonRpcException($"The method '{name}' is already handled by the class {existing.Instance.GetType().Name}");
-            }
 
             var info = new HandlerInfo {
                 Instance = instance,
@@ -55,6 +52,25 @@ namespace JsonRpcLib.Server
             };
             _handlers.TryAdd(name, info);
             Debug.WriteLine($"Added handler for '{name}' on {className}.{m.Name}");
+        }
+
+        public void Bind(string method, Delegate call)
+        {
+            if (string.IsNullOrEmpty(method))
+                throw new ArgumentException("Can not be null or empty", nameof(method));
+            if (call == null)
+                throw new ArgumentNullException(nameof(call));
+
+            if (_handlers.TryGetValue(method, out var existing))
+                throw new JsonRpcException($"The method '{method}' is already handled by the class {existing.Instance.GetType().Name}");
+
+            var info = new HandlerInfo {
+                Instance = null,
+                Method = call.Method,
+                Call = call
+            };
+            _handlers.TryAdd(method, info);
+            Debug.WriteLine($"Added handler for '{method}' on Delegate");
         }
 
         internal void ExecuteHandler(ClientConnection client, int id, string method, object[] args)
