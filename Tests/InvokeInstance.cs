@@ -12,10 +12,10 @@ using Xunit;
 
 namespace Tests
 {
-    public class UnitTest1
+    public class InvokeInstance
     {
         [Fact]
-        public void CanCallInstanceHandler_GivenTypesArgs()
+        public void Call_GivenTypesArgs()
         {
             string reply = null;
             Func<IClient, string, bool> process = (client, data) => false;
@@ -35,7 +35,7 @@ namespace Tests
         }
 
         [Fact]
-        public void CanCallInstanceHandler_GivenIntStringBoolNull()
+        public void Call_GivenIntStringBoolNull()
         {
             string reply = null;
             Func<IClient, string, bool> process = (client, data) => false;
@@ -59,7 +59,7 @@ namespace Tests
         }
 
         [Fact]
-        public void CanCallInstanceHandler_WithIntToByteConversion()
+        public void Call_WithIntToByteConversion()
         {
             string reply = null;
             Func<IClient, string, bool> process = (client, data) => false;
@@ -83,7 +83,7 @@ namespace Tests
         }
 
         [Fact]
-        public void CanCallInstanceHandler_WithDefaultArgsValues()
+        public void Call_WithDefaultArgsValues()
         {
             string reply = null;
             Func<IClient, string, bool> process = (client, data) => false;
@@ -103,7 +103,7 @@ namespace Tests
         }
 
         [Fact]
-        public void CanCallInstanceHandler_WithUIntArg_GivenInt()
+        public void Call_WithUIntArg_GivenInt()
         {
             string reply = null;
             Func<IClient, string, bool> process = (client, data) => false;
@@ -127,7 +127,7 @@ namespace Tests
         }
 
         [Fact]
-        public void CallInstance_GivenDateTime()
+        public void Call_GivenDateTime()
         {
             string reply = null;
             Func<IClient, string, bool> process = (client, data) => false;
@@ -152,7 +152,7 @@ namespace Tests
         }
 
         [Fact]
-        public void CallInstance_GivenTimeSpan()
+        public void Call_GivenTimeSpan()
         {
             string reply = null;
             Func<IClient, string, bool> process = (client, data) => false;
@@ -176,7 +176,7 @@ namespace Tests
         }
 
         [Fact]
-        public void CanCallInstanceHandler_GivenStringArray()
+        public void Call_GivenStringArray()
         {
             string reply = null;
             Func<IClient, string, bool> process = (client, data) => false;
@@ -196,6 +196,54 @@ namespace Tests
             reply.Should().NotBeNull();
             var replyJson = JToken.Parse(reply);
             var a = JToken.Parse("{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":4}");
+            replyJson.Should().BeEquivalentTo(a);
+        }
+
+        [Fact]
+        public void ReturnPrimitiveArray()
+        {
+            string reply = null;
+            Func<IClient, string, bool> process = (client, data) => false;
+
+            var handler = new TestHandlerFake();
+            var server = new JsonRpcServer();
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
+            clientMock.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => reply = s);
+
+            var reqOring = new Request() { Id = 3, Method = "ReturnPrimitiveArray" };
+            var json = Serializer.Serialize(reqOring);
+            var req = Serializer.Deserialize<Request>(json);
+
+            server.RegisterHandlers(handler);
+            server.ExecuteHandler(clientMock.Object, req.Id, req.Method, req.Params);
+
+            reply.Should().NotBeNull();
+            var replyJson = JToken.Parse(reply);
+            var a = JToken.Parse("{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":[1,2,3,4,5]}");
+            replyJson.Should().BeEquivalentTo(a);
+        }
+
+        [Fact]
+        public void ReturnStringArray()
+        {
+            string reply = null;
+            Func<IClient, string, bool> process = (client, data) => false;
+
+            var handler = new TestHandlerFake();
+            var server = new JsonRpcServer();
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
+            clientMock.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => reply = s);
+
+            var reqOring = new Request() { Id = 3, Method = "ReturnStringArray" };
+            var json = Serializer.Serialize(reqOring);
+            var req = Serializer.Deserialize<Request>(json);
+
+            server.RegisterHandlers(handler);
+            server.ExecuteHandler(clientMock.Object, req.Id, req.Method, req.Params);
+
+            reply.Should().NotBeNull();
+            var replyJson = JToken.Parse(reply);
+            var a = JToken.Parse("{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":[\"one\",\"two\",\"three\"]}");
             replyJson.Should().BeEquivalentTo(a);
         }
     }

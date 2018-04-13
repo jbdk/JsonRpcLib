@@ -19,7 +19,7 @@ namespace JsonRpcLib
     internal class Request : Notify
     {
         [DataMember(Name = "id")]
-        public int Id { get; set; }
+        public int Id { get; set; } = -1;
     }
 
     [DataContract]

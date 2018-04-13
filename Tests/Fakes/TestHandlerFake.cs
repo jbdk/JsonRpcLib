@@ -37,7 +37,16 @@ namespace Tests.Fakes
         public int StringArrayTest(IList<string> a)
         {
             return a.Count;
+        }
 
+        public int[] ReturnPrimitiveArray()
+        {
+            return new int[] { 1, 2, 3, 4, 5 };
+        }
+
+        public string[] ReturnStringArray()
+        {
+            return new string[] { "one", "two", "three" };
         }
     }
 }

@@ -50,7 +50,7 @@ namespace JsonRpcLib.Server
             if (prefix.Any(c => char.IsWhiteSpace(c)))
                 throw new ArgumentException("Prefix string can not contain any whitespace");
 
-            foreach (var m in type.GetMethods())
+            foreach (var m in type.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.Public))
             {
                 var name = prefix + m.Name;
                 if (_handlers.TryGetValue(name, out var existing))
@@ -73,10 +73,14 @@ namespace JsonRpcLib.Server
             {
                 try
                 {
-                    FixupArgs(info.Method, ref args, out bool notAllArgsAreThere);
+                    bool hasOptionalParameters = false;
+                    if (args != null)
+                    {
+                        FixupArgs(info.Method, ref args, out hasOptionalParameters);
+                    }
 
                     object result = null;
-                    if (notAllArgsAreThere)
+                    if (hasOptionalParameters)
                     {
                         // Use reflection invoke instead of delegate because we have optional parameters
                         if (info.Object != null)
@@ -95,6 +99,9 @@ namespace JsonRpcLib.Server
                     {
                         result = info.Call.DynamicInvoke(args);
                     }
+
+                    if (id == -1)
+                        return;     // Was a notify, so don't reply
 
                     if (info.Method.ReturnParameter.ParameterType != typeof(void))
                     {
