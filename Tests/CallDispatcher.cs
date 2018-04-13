@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using FluentAssertions;
 using JsonRpcLib;
 using JsonRpcLib.Server;
@@ -20,7 +21,7 @@ namespace Tests
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
             clientMock.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => reply = s);
 
             server.RegisterHandlers(handler);
@@ -40,7 +41,7 @@ namespace Tests
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
             clientMock.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => reply = s);
 
             var reqOring = new Request() { Id = 1, Method = "FirstTest", Params = new object[] { 1, "string", false, null } };
@@ -64,7 +65,7 @@ namespace Tests
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
             clientMock.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => reply = s);
 
             var reqOring = new Request() { Id = 81, Method = "ByteTest", Params = new object[] { 99 } };
