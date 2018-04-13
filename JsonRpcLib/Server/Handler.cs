@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using Newtonsoft.Json.Linq;
 
 namespace JsonRpcLib.Server
 {
@@ -152,9 +153,18 @@ namespace JsonRpcLib.Server
                 var at = args[i].GetType();
                 if (at == p[i].ParameterType)
                     continue;
-
                 if (at.IsPrimitive)
                     args[i] = Convert.ChangeType(args[i], p[i].ParameterType);
+                else if (at == typeof(string))
+                {
+                    if (p[i].ParameterType == typeof(TimeSpan))
+                        args[i] = TimeSpan.Parse((string)args[i]);
+                }
+                else if (at == typeof(JArray))
+                {
+                    var a = args[i] as JArray;
+                    args[i] = a.ToObject(p[i].ParameterType);
+                }
             }
 
             if (args.Length < p.Length)

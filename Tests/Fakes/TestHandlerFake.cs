@@ -25,5 +25,19 @@ namespace Tests.Fakes
         {
             return n;
         }
+
+        public void DateTimeTest(DateTime time)
+        {
+        }
+
+        public void TimeSpanTest(TimeSpan ts)
+        {
+        }
+
+        public int StringArrayTest(IList<string> a)
+        {
+            return a.Count;
+
+        }
     }
 }
