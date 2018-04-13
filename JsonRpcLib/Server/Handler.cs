@@ -72,9 +72,23 @@ namespace JsonRpcLib.Server
             {
                 try
                 {
-                    FixupArgs(info.Method, args);
+                    FixupArgs(info.Method, ref args, out bool notAllArgsAreThere);
 
-                    var result = info.Call.DynamicInvoke(args);
+                    object result = null;
+                    if (notAllArgsAreThere)
+                    {
+#if !NET40
+                        // We will never get here on NET40
+                        result = info.Method.Invoke(info.Object,
+                            BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod | BindingFlags.CreateInstance,
+                            null, args, null);
+#endif
+                    }
+                    else
+                    {
+                        result = info.Call.DynamicInvoke(args);
+                    }
+
                     if (info.Method.ReturnParameter.ParameterType != typeof(void))
                     {
                         var response = new Response<object>() {
@@ -117,13 +131,19 @@ namespace JsonRpcLib.Server
             }
         }
 
-        private void FixupArgs(MethodInfo method, object[] args)
+        private void FixupArgs(MethodInfo method, ref object[] args, out bool notAllArgsAreThere)
         {
+            notAllArgsAreThere = false;
             var p = method.GetParameters();
-            if (p.Length > args.Length)
-                throw new JsonRpcException($"Argument count mismatch (Expected {p.Length}, but got only {args.Length}");
+#if NET40
+            int neededArgs = p.Length;
+#else
+            int neededArgs = p.Count(x => !x.HasDefaultValue);
+#endif
+            if (neededArgs > args.Length)
+                throw new JsonRpcException($"Argument count mismatch (Expected at least {neededArgs}, but got only {args.Length}");
 
-            for (int i = 0; i < p.Length; i++)
+            for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] == null)
                     continue;
@@ -133,6 +153,12 @@ namespace JsonRpcLib.Server
 
                 if (at.IsPrimitive)
                     args[i] = Convert.ChangeType(args[i], p[i].ParameterType);
+            }
+
+            if (args.Length < p.Length)
+            {
+                args = args.Concat(Enumerable.Repeat(Type.Missing, p.Length - args.Length)).ToArray();
+                notAllArgsAreThere = true;
             }
         }
     }

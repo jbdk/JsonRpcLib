@@ -16,5 +16,9 @@ namespace Tests.Fakes
         public void ByteTest(byte n)
         {
         }
+
+        public void DefaultArgs(int n, bool b = true)
+        {
+        }
     }
 }
