@@ -34,9 +34,9 @@ namespace Tests.Fakes
         {
         }
 
-        public int StringArrayTest(IList<string> a)
+        public int StringArrayTest(string[] a)
         {
-            return a.Count;
+            return a.Length;
         }
 
         public int[] ReturnPrimitiveArray()

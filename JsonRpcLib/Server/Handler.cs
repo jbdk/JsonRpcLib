@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using Newtonsoft.Json.Linq;
 
 namespace JsonRpcLib.Server
 {
@@ -116,8 +116,7 @@ namespace JsonRpcLib.Server
                 Id = id,
                 Error = new Error() { Code = -1, Message = message }
             };
-            var json = Serializer.Serialize(response);
-            client.Write(json);
+            client.WriteAsJson(response);
         }
 
         private static void SendUnknownMethodError(ClientConnection client, int id, string method)
@@ -126,8 +125,7 @@ namespace JsonRpcLib.Server
                 Id = id,
                 Error = new Error() { Code = -32601, Message = $"Unknown method '{method}'" }
             };
-            var json = Serializer.Serialize(response);
-            client.Write(json);
+            client.WriteAsJson(response);
         }
 
         private static void SendResponse(ClientConnection client, int id)
@@ -135,8 +133,7 @@ namespace JsonRpcLib.Server
             var response = new Response() {
                 Id = id
             };
-            var json = Serializer.Serialize(response);
-            client.Write(json);
+            client.WriteAsJson(response);
         }
 
         private static void SendResponse(ClientConnection client, int id, object result)
@@ -145,8 +142,7 @@ namespace JsonRpcLib.Server
                 Id = id,
                 Result = result
             };
-            var json = Serializer.Serialize(response);
-            client.Write(json);
+            client.WriteAsJson(response);
         }
 
         private static object Invoke(object[] args, HandlerInfo info, bool hasOptionalParameters)
@@ -202,13 +198,28 @@ namespace JsonRpcLib.Server
                     // Convert string to TimeSpan
                     if (p[i].ParameterType == typeof(TimeSpan))
                         args[i] = TimeSpan.Parse((string)args[i]);
+                    // Convert string to TimeSpan
+                    else if (p[i].ParameterType == typeof(DateTime))
+                        args[i] = DateTime.Parse((string)args[i]);
+                    else if (p[i].ParameterType == typeof(DateTimeOffset))
+                        args[i] = DateTimeOffset.Parse((string)args[i]);
                 }
-                else if (at == typeof(JArray))
+                else if (at == typeof(List<object>))
                 {
-                    // Convert array to a real typed array
-                    var a = args[i] as JArray;
-                    args[i] = a.ToObject(p[i].ParameterType);
+                    // Create a new array with the target element type and copy values over
+                    var list = (List<object>)args[i];
+                    var et = p[i].ParameterType.GetElementType();
+                    var a = Array.CreateInstance(p[i].ParameterType.GetElementType(), list.Count);
+                    for (int j = 0; j < list.Count; j++)
+                        a.SetValue(list[j], j);
+                    args[i] = a;
                 }
+                //else if (at == typeof(JArray))
+                //{
+                //    // Convert array to a real typed array
+                //    var a = args[i] as JArray;
+                //    args[i] = a.ToObject(p[i].ParameterType);
+                //}
             }
 
             if (args.Length < p.Length)

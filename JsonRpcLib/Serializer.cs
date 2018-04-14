@@ -1,7 +1,7 @@
-﻿using System.IO;
-using System.Runtime.Serialization.Json;
-using System.Text;
-using Newtonsoft.Json;
+﻿using System;
+using System.IO;
+using Utf8Json;
+using Utf8Json.Resolvers;
 
 namespace JsonRpcLib
 {
@@ -9,12 +9,17 @@ namespace JsonRpcLib
     {
         public static string Serialize<T>(T data) where T : new()
         {
-            return JsonConvert.SerializeObject(data, Formatting.None);
+            return JsonSerializer.ToJsonString<T>(data, StandardResolver.AllowPrivateSnakeCase);
+        }
+
+        public static void Serialize<T>(T data, Stream stream) where T : new()
+        {
+            JsonSerializer.Serialize<T>(stream, data, StandardResolver.AllowPrivateSnakeCase);
         }
 
         public static T Deserialize<T>(string json) where T : new()
         {
-            return JsonConvert.DeserializeObject<T>(json);
+            return JsonSerializer.Deserialize<T>(json, StandardResolver.AllowPrivateSnakeCase);
         }
     }
 }

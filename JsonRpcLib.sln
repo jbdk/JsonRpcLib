@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleServer", "Samples\Sim
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{0F488790-9F61-4FDE-AA70-F8067F5053C7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PerfTest", "Samples\PerfTest\PerfTest.csproj", "{6E4B01E7-6CB4-474B-8BA3-E88DDF38B42D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,12 +31,17 @@ Global
 		{0ACFBC5A-F506-4633-AE93-2B6732053314}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0ACFBC5A-F506-4633-AE93-2B6732053314}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0ACFBC5A-F506-4633-AE93-2B6732053314}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E4B01E7-6CB4-474B-8BA3-E88DDF38B42D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E4B01E7-6CB4-474B-8BA3-E88DDF38B42D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E4B01E7-6CB4-474B-8BA3-E88DDF38B42D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E4B01E7-6CB4-474B-8BA3-E88DDF38B42D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{0ACFBC5A-F506-4633-AE93-2B6732053314} = {0F488790-9F61-4FDE-AA70-F8067F5053C7}
+		{6E4B01E7-6CB4-474B-8BA3-E88DDF38B42D} = {0F488790-9F61-4FDE-AA70-F8067F5053C7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DD63E35F-0DA5-4FBF-9074-DC0860E4A59E}

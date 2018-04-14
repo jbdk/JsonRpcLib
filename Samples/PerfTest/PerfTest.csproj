@@ -1,11 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <PackageId>Bundgaard.JsonRpcLib</PackageId>
-    <Authors>John Bundgaard</Authors>
-    <Product>Bundgaard.JsonRpcLib</Product>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -17,8 +14,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Utf8Json" Version="1.3.7" />
+    <PackageReference Include="BenchmarkDotNet.Core" Version="0.10.14" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\JsonRpcLib\JsonRpcLib.csproj" />
+  </ItemGroup>
 
 </Project>

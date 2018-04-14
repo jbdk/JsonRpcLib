@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
+using Utf8Json;
+using Utf8Json.Resolvers;
 
 // REF: http://www.jsonrpc.org/specification
 
@@ -49,8 +52,7 @@ namespace JsonRpcLib.Client
                 Params = args.Length == 0 ? null : args
             };
 
-            string json = Serializer.Serialize(request);
-            WriteLine(json);
+            Send(request);
         }
 
         public void Invoke(string method)
@@ -65,16 +67,19 @@ namespace JsonRpcLib.Client
                 Method = method,
             };
 
-            string json = Serializer.Serialize(request);
-            Reader.DiscardBufferedData();
-            WriteLine(json);
+            Send(request);
+            var response = Receive<Response>();
 
-            json = Reader.ReadLine();
-            var response = Serializer.Deserialize<Response>(json);
             if (response.Error != null)
                 throw new JsonRpcException(response.Error);
             if (response.Id != request.Id)
                 throw new JsonRpcException($"Request/response id mismatch. Expected {request.Id} but got {response.Id}");
+        }
+
+        private T Receive<T>() where T : new()
+        {
+            var s = Reader.ReadLine();
+            return Serializer.Deserialize<T>(s);
         }
 
         public T Invoke<T>(string method, params object[] args)
@@ -90,12 +95,8 @@ namespace JsonRpcLib.Client
                 Params = args.Length == 0 ? null : args
             };
 
-            string json = Serializer.Serialize(request);
-            Reader.DiscardBufferedData();
-            WriteLine(json);
-
-            json = Reader.ReadLine();
-            var response = Serializer.Deserialize<Response<T>>(json);
+            Send(request);
+            var response = Receive<Response<T>>();
             if (response.Error != null)
                 throw new JsonRpcException(response.Error);
             if (response.Id != request.Id)
@@ -104,11 +105,19 @@ namespace JsonRpcLib.Client
             return response.Result;
         }
 
-        private void WriteLine(string json)
+        private void Send<T>(T obj)
         {
-            var bytes = _encoding.GetBytes(json + "\n");
-            _baseStream.Write(bytes, 0, bytes.Length);
+            JsonSerializer.Serialize(_baseStream, obj, StandardResolver.AllowPrivateCamelCase);
+            _baseStream.WriteByte((byte)'\n');
         }
+
+        //private void WriteLine(string json)
+        //{
+        //    Span<byte> buffer = stackalloc byte[json.Length * 2];
+        //    var bytes = _encoding.GetBytes(json, buffer);
+        //    buffer[bytes] = (byte)'\n';
+        //    _baseStream.Write(buffer.Slice(0, bytes + 1));
+        //}
 
         /// <summary>
         /// Captures the raw json messages received from the server for the rest of the connection lifetime.

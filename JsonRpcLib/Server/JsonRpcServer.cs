@@ -51,17 +51,18 @@ namespace JsonRpcLib.Server
                 return false;
             }
 
-            Debug.WriteLine($"#{client.Id} RX: {data}");
+            var request = Serializer.Deserialize<Request>(data);
+            ExecuteHandler(client, request.Id, request.Method, request.Params);
 
-            try
-            {
-                var request = Serializer.Deserialize<Request>(data);
-                ExecuteHandler(client, request.Id, request.Method, request.Params);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Exception in JsonRpcServer.ProcessClientMessage(): " + ex.Message);
-            }
+            //try
+            //{
+            //    var request = Serializer.Deserialize<Request>(data);
+            //    ExecuteHandler(client, request.Id, request.Method, request.Params);
+            //}
+            //catch (Exception ex)
+            //{
+            //    Debug.WriteLine("Exception in JsonRpcServer.ProcessClientMessage(): " + ex.Message);
+            //}
 
             IncommingMessageHook?.Invoke(client, data);
             return true;    // Continue receiving data from client
