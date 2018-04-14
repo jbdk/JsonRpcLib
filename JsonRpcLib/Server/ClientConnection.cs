@@ -2,11 +2,7 @@
 using System.Buffers;
 using System.Diagnostics;
 using System.IO;
-using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Text;
-using Utf8Json;
-using Utf8Json.Resolvers;
 
 namespace JsonRpcLib.Server
 {
@@ -14,9 +10,6 @@ namespace JsonRpcLib.Server
     {
         internal class ClientConnection : IClient
         {
-            private const int BUFFER_SIZE = 1 * 1024 * 1024;
-            private const int PACKET_SIZE = 10 * 1024;
-
             public int Id { get; }
             public bool IsConnected { get; private set; }
             public string Address { get; }
@@ -24,13 +17,8 @@ namespace JsonRpcLib.Server
             private readonly Stream _stream;
             private readonly Func<ClientConnection, string, bool> _process;
             private readonly ArrayPool<byte> _pool = ArrayPool<byte>.Shared;
+            private readonly AsyncLineReader _lineReader;
             private readonly Encoding _encoding;
-            private readonly Action<ClientConnection, bool> _clientIsIdle;
-
-            private byte[] _readBuffer;
-            private byte[] _packetBuffer;
-            int _packetPosition;
-            bool _reportedIdleStatus = false;
 
             public ClientConnection(int id, string address, Stream stream, Func<ClientConnection, string, bool> process, Encoding encoding)
             {
@@ -40,70 +28,21 @@ namespace JsonRpcLib.Server
                 _stream = stream ?? throw new ArgumentNullException(nameof(stream));
                 _process = process ?? throw new ArgumentNullException(nameof(process));
                 IsConnected = true;
-
-                _readBuffer = _pool.Rent(BUFFER_SIZE);
-                BeginRead();
+                _lineReader = new AsyncLineReader(_stream, ProcessReceivedMessage) {
+                    ConnectionClosed = ConnectionClosed
+                };
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private void BeginRead()
+            private void ConnectionClosed()
             {
-                _stream.BeginRead(_readBuffer, 0, _readBuffer.Length, ReadCompleted2, this);
+                KillConnection();
             }
 
-            private void ReadCompleted2(IAsyncResult ar)
+            private void ProcessReceivedMessage(Memory<byte> data)
             {
-                try
+                var message = _encoding.GetString(data.Span);
+                if (!_process(this, message))
                 {
-                    int readCount = _stream.EndRead(ar);
-                    if (readCount <= 0)
-                    {
-                        KillConnection();
-                        return;
-                    }
-
-                    var data = _readBuffer;
-                    try
-                    {
-                        if (_packetBuffer == null)
-                        {
-                            _packetBuffer = _pool.Rent(PACKET_SIZE);
-                            _packetPosition = 0;
-                        }
-                        for (int i = 0; i < readCount; i++)
-                        {
-                            if (data[i] == '\n')
-                            {
-                                try
-                                {
-                                    var message = _encoding.GetString(_packetBuffer.AsSpan(0, _packetPosition));
-                                    if (!_process(this, message))
-                                    {
-                                        KillConnection();
-                                    }
-                                }
-                                finally
-                                {
-                                    _packetPosition = 0;
-                                }
-                            }
-                            else
-                            {
-                                _packetBuffer[_packetPosition++] = data[i];
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        _pool.Return(data);
-
-                        _readBuffer = _pool.Rent(BUFFER_SIZE);
-                        BeginRead();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Exception in ClientConnection.ReadCompleted: " + ex.Message);
                     KillConnection();
                 }
             }
@@ -130,9 +69,11 @@ namespace JsonRpcLib.Server
             {
                 try
                 {
-                    // Span<byte> buffer = stackalloc byte[PACKET_SIZE];
-                    JsonSerializer.Serialize(_stream, data, StandardResolver.AllowPrivateSnakeCase);
-                    _stream.WriteByte((byte)'\n');
+                    var json = Utf8Json.JsonSerializer.ToJsonString(data, Serializer.Resolver);
+                    Span<byte> buffer = stackalloc byte[json.Length * 2];
+                    int len = _encoding.GetBytes(json, buffer);
+                    buffer[len] = (byte)'\n';
+                    _stream.Write(buffer.Slice(0, len + 1));
                 }
                 catch (Exception ex)
                 {
@@ -144,16 +85,7 @@ namespace JsonRpcLib.Server
             public void Dispose()
             {
                 KillConnection();
-                if (_readBuffer != null)
-                {
-                    _pool.Return(_readBuffer);
-                    _readBuffer = null;
-                }
-                if (_packetBuffer != null)
-                {
-                    _pool.Return(_packetBuffer);
-                    _packetBuffer = null;
-                }
+                _lineReader.Dispose();
             }
 
             private void KillConnection()
@@ -161,7 +93,7 @@ namespace JsonRpcLib.Server
                 if (!IsConnected)
                     return;
 
-                _stream.Close();
+                _stream.Dispose();
                 IsConnected = false;
                 _process(this, null);
             }

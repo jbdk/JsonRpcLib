@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Utf8Json;
 using Utf8Json.Resolvers;
 
@@ -12,13 +14,14 @@ namespace JsonRpcLib.Client
 {
     public class JsonRpcClient : IDisposable
     {
-        private readonly Stream _baseStream;
+        public Stream Stream { get; }
         private bool _disposed;
         private int _nextId;
         private bool _captureMode;
         private TimeSpan _timeout = TimeSpan.FromSeconds(5);
         private readonly Encoding _encoding;
-        protected StreamReader Reader { get; }
+        private readonly AsyncLineReader _lineReader;
+        private TaskCompletionSource<Memory<byte>> _pendingInvoke;
 
         /// <summary>
         /// Get/Set read and write timeout 
@@ -28,16 +31,18 @@ namespace JsonRpcLib.Client
             get => _timeout;
             set {
                 _timeout = value;
-                _baseStream.ReadTimeout = _baseStream.WriteTimeout = (int)value.TotalMilliseconds;
+                Stream.ReadTimeout = Stream.WriteTimeout = (int)value.TotalMilliseconds;
             }
         }
 
         public JsonRpcClient(Stream baseStream, Encoding encoding = null)
         {
-            _baseStream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
-            _baseStream.ReadTimeout = _baseStream.WriteTimeout = (int)Timeout.TotalMilliseconds;
+            Stream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
+            Stream.ReadTimeout = Stream.WriteTimeout = (int)Timeout.TotalMilliseconds;
             _encoding = encoding ?? Encoding.UTF8;
-            Reader = new StreamReader(_baseStream, _encoding);
+            _lineReader = new AsyncLineReader(Stream, ProcessReceivedMessage) {
+                ConnectionClosed = ConnectionClosed
+            };
         }
 
         public void Notify(string method, params object[] args)
@@ -67,19 +72,11 @@ namespace JsonRpcLib.Client
                 Method = method,
             };
 
-            Send(request);
-            var response = Receive<Response>();
-
+            var response = InvokeHelper<Response>(request);
             if (response.Error != null)
                 throw new JsonRpcException(response.Error);
             if (response.Id != request.Id)
                 throw new JsonRpcException($"Request/response id mismatch. Expected {request.Id} but got {response.Id}");
-        }
-
-        private T Receive<T>() where T : new()
-        {
-            var s = Reader.ReadLine();
-            return Serializer.Deserialize<T>(s);
         }
 
         public T Invoke<T>(string method, params object[] args)
@@ -95,8 +92,7 @@ namespace JsonRpcLib.Client
                 Params = args.Length == 0 ? null : args
             };
 
-            Send(request);
-            var response = Receive<Response<T>>();
+            var response = InvokeHelper<Response<T>>(request);
             if (response.Error != null)
                 throw new JsonRpcException(response.Error);
             if (response.Id != request.Id)
@@ -105,10 +101,40 @@ namespace JsonRpcLib.Client
             return response.Result;
         }
 
+        private T InvokeHelper<T>(Request request)
+        {
+            var pending = new TaskCompletionSource<Memory<byte>>();
+            _pendingInvoke = pending;
+
+            Send(request);
+
+            if (!pending.Task.Wait(Timeout))
+                throw new TimeoutException();
+            return Serializer.Deserialize<T>(pending.Task.Result.Span);
+        }
+
+        public void Flush() => Stream.Flush();
+
+        private void ConnectionClosed()
+        {
+        }
+
+        private void ProcessReceivedMessage(Memory<byte> data)
+        {
+            var pending = Interlocked.Exchange<TaskCompletionSource<Memory<byte>>>(ref _pendingInvoke, null);
+            pending?.TrySetResult(data);
+        }
+
         private void Send<T>(T obj)
         {
-            JsonSerializer.Serialize(_baseStream, obj, StandardResolver.AllowPrivateCamelCase);
-            _baseStream.WriteByte((byte)'\n');
+            var json = Utf8Json.JsonSerializer.ToJsonString(obj, Serializer.Resolver);
+            Span<byte> buffer = stackalloc byte[json.Length * 2];
+            int len = _encoding.GetBytes(json, buffer);
+            buffer[len] = (byte)'\n';
+            Stream.Write(buffer.Slice(0, len + 1));
+
+            //Serializer.Serialize<T>(Stream, obj);
+            //Stream.WriteByte((byte)'\n');
         }
 
         //private void WriteLine(string json)
@@ -116,7 +142,7 @@ namespace JsonRpcLib.Client
         //    Span<byte> buffer = stackalloc byte[json.Length * 2];
         //    var bytes = _encoding.GetBytes(json, buffer);
         //    buffer[bytes] = (byte)'\n';
-        //    _baseStream.Write(buffer.Slice(0, bytes + 1));
+        //    Stream.Write(buffer.Slice(0, bytes + 1));
         //}
 
         /// <summary>
@@ -129,6 +155,7 @@ namespace JsonRpcLib.Client
         /// <param name="handler">The callback handler</param>
         public void EnterCaptureMode(string initiateMethod, Func<string, bool> handler)
         {
+            /*
             if (string.IsNullOrWhiteSpace(initiateMethod))
                 throw new ArgumentException("Can not be null or empty", nameof(initiateMethod));
             if (handler == null)
@@ -143,7 +170,7 @@ namespace JsonRpcLib.Client
             // Tell the server to start doing its stuff
             Invoke(initiateMethod);
 
-            _baseStream.ReadTimeout = int.MaxValue;
+            Stream.ReadTimeout = int.MaxValue;
             try
             {
                 while (true)
@@ -160,8 +187,9 @@ namespace JsonRpcLib.Client
                 // NOP
             }
 
-            _baseStream.ReadTimeout = Timeout.Milliseconds;
+            Stream.ReadTimeout = Timeout.Milliseconds;
             _captureMode = false;
+            */
         }
 
         /// <summary>
@@ -172,7 +200,8 @@ namespace JsonRpcLib.Client
             if (_disposed)
                 return;
 
-            _baseStream?.Dispose();
+            Stream?.Dispose();
+            _lineReader?.Dispose();
             GC.SuppressFinalize(this);
 
             _disposed = true;

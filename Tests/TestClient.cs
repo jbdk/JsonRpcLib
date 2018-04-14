@@ -14,7 +14,7 @@ namespace Tests
 
         internal int ReceiveDataWithin(int timeoutInMs)
         {
-            var t = Reader.ReadAsync(new char[256], 0, 256);
+            var t = Stream.ReadAsync(new byte[256], 0, 256);
             if (t.Wait(timeoutInMs))
                 return t.Result;
             return 0;

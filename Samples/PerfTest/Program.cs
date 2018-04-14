@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,12 +11,11 @@ namespace PerfTest
         {
             Console.WriteLine("Simple PerfTest\n");
 
-            int threadCount = Debugger.IsAttached ? 1 : 4;
-            int testCount = 1_000_000;
-            int port = 54343;
+            int threadCount = Debugger.IsAttached ? 1 : 8;
+            const int testCount = 1_000_000;
+            const int port = 54343;
 
             Console.WriteLine($"Using {threadCount} client threads");
-
 
             using (var server = new TestServer(port))
             {
@@ -28,7 +26,7 @@ namespace PerfTest
                     clients[i] = new TestClient(port);
 
                 RunNotifyTest(threadCount, testCount, clients);
-                RunInvokeTest(threadCount, testCount, clients);
+                RunInvokeTest(threadCount, testCount / 10, clients);
             }
         }
 
