@@ -5,9 +5,9 @@ using JsonRpcLib.Client;
 
 namespace PerfTest
 {
-    public class TestClient : JsonRpcClient
+    public class MyClient : JsonRpcClient
     {
-        public TestClient(int port) : base(new TcpClient("127.0.0.1", port).GetStream())
+        public MyClient(int port) : base(new TcpClient("127.0.0.1", port).GetStream())
         {
             Timeout = Debugger.IsAttached ? TimeSpan.FromHours(1) : TimeSpan.FromSeconds(1);
         }

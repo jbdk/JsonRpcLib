@@ -47,7 +47,7 @@ namespace JsonRpcLib.Server
                 }
             }
 
-            virtual public bool Write(string data)
+            virtual public bool WriteString(string data)
             {
                 try
                 {

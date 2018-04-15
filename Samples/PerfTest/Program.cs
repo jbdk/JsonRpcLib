@@ -17,20 +17,20 @@ namespace PerfTest
 
             Console.WriteLine($"Using {threadCount} client threads");
 
-            using (var server = new TestServer(port))
+            using (var server = new MyServer(port))
             {
                 server.Bind<Target>();
 
-                TestClient[] clients = new TestClient[threadCount];
+                MyClient[] clients = new MyClient[threadCount];
                 for (int i = 0; i < threadCount; i++)
-                    clients[i] = new TestClient(port);
+                    clients[i] = new MyClient(port);
 
                 RunNotifyTest(threadCount, testCount, clients);
                 RunInvokeTest(threadCount, testCount / 10, clients);
             }
         }
 
-        private static void RunNotifyTest(int threadCount, int testCount, TestClient[] clients)
+        private static void RunNotifyTest(int threadCount, int testCount, MyClient[] clients)
         {
             var completed = Target.PrepareNewTest(testCount);
             var sw = Stopwatch.StartNew();
@@ -50,7 +50,7 @@ namespace PerfTest
             Console.WriteLine("  {1} r/s ({0}ms elapsed) ", t1, (int)( (double)testCount / ( (double)t1 / 1000 ) ));
         }
 
-        private static void RunInvokeTest(int threadCount, int testCount, TestClient[] clients)
+        private static void RunInvokeTest(int threadCount, int testCount, MyClient[] clients)
         {
             var completed = Target.PrepareNewTest(testCount);
             var sw = Stopwatch.StartNew();
@@ -73,7 +73,7 @@ namespace PerfTest
             Console.WriteLine("  {1} r/s ({0}ms elapsed) ", t1, (int)( (double)testCount / ( (double)t1 / 1000 ) ));
         }
 
-        private static void NotifyTest(TestClient client, int testCount)
+        private static void NotifyTest(MyClient client, int testCount)
         {
             for (int i = 0; i < testCount; i++)
             {
@@ -81,7 +81,7 @@ namespace PerfTest
             }
         }
 
-        private static void InvokeTest(TestClient client, int testCount)
+        private static void InvokeTest(MyClient client, int testCount)
         {
             for (int i = 0; i < testCount; i++)
             {

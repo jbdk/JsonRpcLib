@@ -74,7 +74,7 @@ namespace JsonRpcLib.Server
             while (char.IsDigit(data[a + b]))
                 b++;
             int id = int.Parse(data.AsSpan(a, b));
-            client.Write($"{{\"jsonrpc\":\"2.0\",\"id\":{id}}}");
+            client.WriteString($"{{\"jsonrpc\":\"2.0\",\"id\":{id}}}");
         }
 
         private void HandleDisconnect(ClientConnection client)

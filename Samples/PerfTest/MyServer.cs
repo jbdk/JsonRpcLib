@@ -6,12 +6,12 @@ using JsonRpcLib.Server;
 
 namespace PerfTest
 {
-    public class TestServer : JsonRpcServer
+    public class MyServer : JsonRpcServer
     {
         readonly TcpListener _listener;
         public ManualResetEventSlim ClientConnected { get; } = new ManualResetEventSlim();
 
-        public TestServer(int port)
+        public MyServer(int port)
         {
             _listener = new TcpListener(IPAddress.Loopback, port);
             _listener.Start();

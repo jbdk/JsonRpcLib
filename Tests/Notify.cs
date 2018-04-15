@@ -23,7 +23,7 @@ namespace Tests
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
             var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
-            clientMock.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => reply = s);
+            clientMock.Setup(x => x.WriteString(It.IsAny<string>())).Callback<string>(s => reply = s);
 
             server.Bind(handler);
             server.ExecuteHandler(clientMock.Object, -1, "ReturnStringArray", null);
