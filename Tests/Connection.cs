@@ -47,23 +47,6 @@ namespace Tests
                 }
             }
         }
-
-        [Fact]
-        public void Notify_WithNoResponse()
-        {
-            var port = Interlocked.Increment(ref _nextPort);
-            using (var server = new TestServer(port))
-            {
-                using (var client = new TestClient(port))
-                {
-                    client.Notify("TestResponse", 1, "abc");
-                    int receivedCount = client.ReceiveDataWithin(50);
-
-                    receivedCount.Should().Be(0);
-                    server.LastMessageReceived.Should().NotBeNull();
-                }
-            }
-        }
     }
 }
 

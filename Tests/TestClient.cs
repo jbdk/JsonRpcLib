@@ -11,13 +11,5 @@ namespace Tests
         {
             Timeout = Debugger.IsAttached ? TimeSpan.FromHours(1) : TimeSpan.FromSeconds(1);
         }
-
-        internal int ReceiveDataWithin(int timeoutInMs)
-        {
-            var t = Stream.ReadAsync(new byte[256], 0, 256);
-            if (t.Wait(timeoutInMs))
-                return t.Result;
-            return 0;
-        }
     }
 }
