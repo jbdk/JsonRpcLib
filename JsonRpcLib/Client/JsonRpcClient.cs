@@ -132,18 +132,7 @@ namespace JsonRpcLib.Client
             int len = _encoding.GetBytes(json, buffer);
             buffer[len] = (byte)'\n';
             Stream.Write(buffer.Slice(0, len + 1));
-
-            //Serializer.Serialize<T>(Stream, obj);
-            //Stream.WriteByte((byte)'\n');
         }
-
-        //private void WriteLine(string json)
-        //{
-        //    Span<byte> buffer = stackalloc byte[json.Length * 2];
-        //    var bytes = _encoding.GetBytes(json, buffer);
-        //    buffer[bytes] = (byte)'\n';
-        //    Stream.Write(buffer.Slice(0, bytes + 1));
-        //}
 
         /// <summary>
         /// Captures the raw json messages received from the server for the rest of the connection lifetime.

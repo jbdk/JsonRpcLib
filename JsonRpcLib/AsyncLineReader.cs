@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace JsonRpcLib
 {
@@ -12,11 +13,11 @@ namespace JsonRpcLib
         const int PACKET_SIZE = 10 * 1024;
 
         private static readonly ArrayPool<byte> _pool = ArrayPool<byte>.Shared;
-        private byte[] _readBuffer;
         private byte[] _packetBuffer;
         int _packetPosition;
         private readonly Stream _stream;
         private readonly Action<Memory<byte>> _processLine;
+        private object _lock = new object();
 
         public Action ConnectionClosed { get; set; }
 
@@ -24,16 +25,20 @@ namespace JsonRpcLib
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
             _processLine = processLine ?? throw new ArgumentNullException(nameof(processLine));
-
-            _readBuffer = _pool.Rent(BUFFER_SIZE);
             BeginRead();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void BeginRead() => _stream.BeginRead(_readBuffer, 0, _readBuffer.Length, ReadCompleted, this);
+        private void BeginRead()
+        {
+            var buffer = _pool.Rent(PACKET_SIZE);
+            _stream.BeginRead(buffer, 0, buffer.Length, ReadCompleted, buffer);
+        }
 
         private void ReadCompleted(IAsyncResult ar)
         {
+            var data = (byte[])ar.AsyncState;
+
             try
             {
                 int readCount = _stream.EndRead(ar);
@@ -43,7 +48,6 @@ namespace JsonRpcLib
                     return;
                 }
 
-                var data = _readBuffer;
                 try
                 {
                     if (_packetBuffer == null)
@@ -56,8 +60,12 @@ namespace JsonRpcLib
                         if (data[i] == '\n')
                         {
                             int size = _packetPosition;
+                            var p = _packetBuffer;
+                            _packetBuffer = _pool.Rent(PACKET_SIZE);
                             _packetPosition = 0;
-                            _processLine(_packetBuffer.AsMemory(0, size));
+
+                            _processLine(p.AsMemory(0, size));
+                            _pool.Return(p);
                         }
                         else
                         {
@@ -67,9 +75,6 @@ namespace JsonRpcLib
                 }
                 finally
                 {
-                    _pool.Return(data);
-
-                    _readBuffer = _pool.Rent(BUFFER_SIZE);
                     BeginRead();
                 }
             }
@@ -78,16 +83,15 @@ namespace JsonRpcLib
                 Debug.WriteLine("Exception in AsyncStreamReader.ReadCompleted: " + ex.Message);
                 ConnectionClosed?.Invoke();
             }
+            finally
+            {
+                _pool.Return(data);
+            }
         }
 
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()
         {
-            if (_readBuffer != null)
-                _pool.Return(_readBuffer);
-            if (_packetBuffer != null)
-                _pool.Return(_packetBuffer);
-
             GC.SuppressFinalize(this);
         }
     }

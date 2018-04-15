@@ -51,10 +51,10 @@ namespace JsonRpcLib.Server
             {
                 try
                 {
-                    Span<byte> buffer = stackalloc byte[data.Length * 2];
+                    var buffer = _pool.Rent(data.Length * 2);
                     var bytes = _encoding.GetBytes(data, buffer);
-                    buffer[bytes] = (byte)'\n';
-                    _stream.Write(buffer.Slice(0, bytes + 1));
+                    buffer[bytes++] = (byte)'\n';
+                    _stream.BeginWrite(buffer, 0, bytes, (ar) => _pool.Return((byte[])ar.AsyncState), buffer);
                     return true;
                 }
                 catch (Exception ex)
@@ -70,14 +70,14 @@ namespace JsonRpcLib.Server
                 try
                 {
                     var json = Utf8Json.JsonSerializer.ToJsonString(data, Serializer.Resolver);
-                    Span<byte> buffer = stackalloc byte[json.Length * 2];
-                    int len = _encoding.GetBytes(json, buffer);
-                    buffer[len] = (byte)'\n';
-                    _stream.Write(buffer.Slice(0, len + 1));
+                    var buffer = _pool.Rent(json.Length * 2);
+                    int bytes = _encoding.GetBytes(json, buffer);
+                    buffer[bytes++] = (byte)'\n';
+                    _stream.BeginWrite(buffer, 0, bytes, (ar) => _pool.Return((byte[])ar.AsyncState), buffer);
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine("Exception in ClientConnection.Write(): " + ex.Message);
+                    Debug.WriteLine("Exception in ClientConnection.WriteAsJson(): " + ex.Message);
                     KillConnection();
                 }
             }

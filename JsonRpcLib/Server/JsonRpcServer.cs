@@ -51,21 +51,30 @@ namespace JsonRpcLib.Server
                 return false;
             }
 
-            var request = Serializer.Deserialize<Request>(data);
-            ExecuteHandler(client, request.Id, request.Method, request.Params);
+            //DummyHandler(client, data);
 
-            //try
-            //{
-            //    var request = Serializer.Deserialize<Request>(data);
-            //    ExecuteHandler(client, request.Id, request.Method, request.Params);
-            //}
-            //catch (Exception ex)
-            //{
-            //    Debug.WriteLine("Exception in JsonRpcServer.ProcessClientMessage(): " + ex.Message);
-            //}
+            try
+            {
+                var request = Serializer.Deserialize<Request>(data);
+                ExecuteHandler(client, request.Id, request.Method, request.Params);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Exception in JsonRpcServer.ProcessClientMessage(): " + ex.Message);
+            }
 
             IncommingMessageHook?.Invoke(client, data);
             return true;    // Continue receiving data from client
+        }
+
+        private void DummyHandler(ClientConnection client, string data)
+        {
+            int a = data.IndexOf("\"id\":") + 5;
+            int b = 0;
+            while (char.IsDigit(data[a + b]))
+                b++;
+            int id = int.Parse(data.AsSpan(a, b));
+            client.Write($"{{\"jsonrpc\":\"2.0\",\"id\":{id}}}");
         }
 
         private void HandleDisconnect(ClientConnection client)

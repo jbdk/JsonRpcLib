@@ -57,14 +57,17 @@ namespace PerfTest
 
             Console.WriteLine($"{testCount} Invoke request to the server (static class handler, and no args)");
 
+            Task[] tasks = new Task[threadCount];
             for (int i = 0; i < threadCount; i++)
             {
                 var client = clients[i];
-                Task.Factory.StartNew(() => InvokeTest(client, testCount / threadCount), TaskCreationOptions.LongRunning);
+                tasks[i] = Task.Factory.StartNew(() => InvokeTest(client, testCount / threadCount), TaskCreationOptions.LongRunning);
             }
 
             while (!completed.Wait(100))
                 Console.Write($"  {Target.Counter}\r");
+
+            Task.WaitAll(tasks);
 
             var t1 = sw.ElapsedMilliseconds;
             Console.WriteLine("  {1} r/s ({0}ms elapsed) ", t1, (int)( (double)testCount / ( (double)t1 / 1000 ) ));
