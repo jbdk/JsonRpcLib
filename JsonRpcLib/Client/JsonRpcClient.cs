@@ -57,7 +57,7 @@ namespace JsonRpcLib.Client
                 Params = args.Length == 0 ? null : args
             };
 
-            Send(request);
+            Send(request, false);
         }
 
         public void Invoke(string method)
@@ -125,14 +125,16 @@ namespace JsonRpcLib.Client
             pending?.TrySetResult(data);
         }
 
-        private void Send<T>(T obj)
+        private void Send<T>(T value, bool flush = true)
         {
-            var json = JsonSerializer.ToJsonString(obj, Serializer.Resolver);
-            Span<byte> buffer = stackalloc byte[json.Length * 2];
-            int len = _encoding.GetBytes(json, buffer);
-            buffer[len] = (byte)'\n';
-            Stream.Write(buffer.Slice(0, len + 1));
-            Stream.Flush();
+            var arraySegment = JsonSerializer.SerializeUnsafe(value, Serializer.Resolver);
+            var len = arraySegment.Count;
+            Span<byte> buffer = stackalloc byte[len + 1];
+            arraySegment.AsSpan().CopyTo(buffer);
+            buffer[len++] = (byte)'\n';
+            Stream.Write(buffer);
+            if (flush)
+                Stream.Flush();
         }
 
         /// <summary>

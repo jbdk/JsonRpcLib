@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using Utf8Json;
 
 namespace JsonRpcLib.Server
 {
@@ -19,13 +20,6 @@ namespace JsonRpcLib.Server
             private readonly ArrayPool<byte> _pool = ArrayPool<byte>.Shared;
             private readonly AsyncLineReader _lineReader;
             private readonly Encoding _encoding;
-
-            static private readonly Pool<MemoryStream> _memoryStreamPool;
-
-            static ClientConnection()
-            {
-                _memoryStreamPool = new Pool<MemoryStream>(16, () => new MemoryStream(), ms => ms.Position = 0);
-            }
 
             public ClientConnection(int id, string address, Stream stream, Func<ClientConnection, string, bool> process, Encoding encoding)
             {
@@ -72,21 +66,15 @@ namespace JsonRpcLib.Server
                 }
             }
 
-            virtual public void WriteAsJson(object data)
+            virtual public void WriteAsJson(object value)
             {
-                var ms = _memoryStreamPool.Pop();
-                try
-                {
-                    Serializer.Serialize(ms, data);
-                    ms.WriteByte((byte)'\n');
-                    ms.Position = 0;
-                    ms.CopyToAsync(_stream).ContinueWith(_ => _memoryStreamPool.Push(ms));
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Exception in ClientConnection.WriteAsJson(): " + ex.Message);
-                    KillConnection();
-                }
+                var arraySegment = JsonSerializer.SerializeUnsafe(value, Serializer.Resolver);
+                var len = arraySegment.Count;
+                Span<byte> buffer = stackalloc byte[len + 1];
+                arraySegment.AsSpan().CopyTo(buffer);
+                buffer[len++] = (byte)'\n';
+                _stream.Write(buffer);
+                //_stream.Flush();
             }
 
             public void Dispose()
