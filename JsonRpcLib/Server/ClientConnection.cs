@@ -20,6 +20,13 @@ namespace JsonRpcLib.Server
             private readonly AsyncLineReader _lineReader;
             private readonly Encoding _encoding;
 
+            static private readonly Pool<MemoryStream> _memoryStreamPool;
+
+            static ClientConnection()
+            {
+                _memoryStreamPool = new Pool<MemoryStream>(16, () => new MemoryStream(), ms => ms.Position = 0);
+            }
+
             public ClientConnection(int id, string address, Stream stream, Func<ClientConnection, string, bool> process, Encoding encoding)
             {
                 _encoding = encoding ?? throw new ArgumentNullException(nameof(encoding));
@@ -67,13 +74,13 @@ namespace JsonRpcLib.Server
 
             virtual public void WriteAsJson(object data)
             {
+                var ms = _memoryStreamPool.Pop();
                 try
                 {
-                    var json = Utf8Json.JsonSerializer.ToJsonString(data, Serializer.Resolver);
-                    var buffer = _pool.Rent(json.Length * 2);
-                    int bytes = _encoding.GetBytes(json, buffer);
-                    buffer[bytes++] = (byte)'\n';
-                    _stream.BeginWrite(buffer, 0, bytes, (ar) => _pool.Return((byte[])ar.AsyncState), buffer);
+                    Serializer.Serialize(ms, data);
+                    ms.WriteByte((byte)'\n');
+                    ms.Position = 0;
+                    ms.CopyToAsync(_stream).ContinueWith(_ => _memoryStreamPool.Push(ms));
                 }
                 catch (Exception ex)
                 {

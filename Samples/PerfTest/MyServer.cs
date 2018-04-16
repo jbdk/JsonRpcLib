@@ -23,7 +23,6 @@ namespace PerfTest
             try
             {
                 var tcpClient = _listener.EndAcceptTcpClient(ar);
-                tcpClient.ReceiveBufferSize = tcpClient.SendBufferSize = 32 * 1024;
                 tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 
                 IClient client = AttachClient("1.2.3.4", tcpClient.GetStream());
