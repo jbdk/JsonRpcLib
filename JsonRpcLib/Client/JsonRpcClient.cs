@@ -31,7 +31,7 @@ namespace JsonRpcLib.Client
             get => _timeout;
             set {
                 _timeout = value;
-                Stream.ReadTimeout = Stream.WriteTimeout = (int)value.TotalMilliseconds;
+                //Stream.ReadTimeout = Stream.WriteTimeout = (int)value.TotalMilliseconds;
             }
         }
 
@@ -74,7 +74,7 @@ namespace JsonRpcLib.Client
 
             var response = InvokeHelper<Response>(request);
             if (response.Error != null)
-                throw new JsonRpcException(response.Error);
+                throw new JsonRpcException(response.Error.Value);
             if (response.Id != request.Id)
                 throw new JsonRpcException($"Request/response id mismatch. Expected {request.Id} but got {response.Id}");
         }
@@ -94,7 +94,7 @@ namespace JsonRpcLib.Client
 
             var response = InvokeHelper<Response<T>>(request);
             if (response.Error != null)
-                throw new JsonRpcException(response.Error);
+                throw new JsonRpcException(response.Error.Value);
             if (response.Id != request.Id)
                 throw new JsonRpcException($"Request/response id mismatch. Expected {request.Id} but got {response.Id}");
 

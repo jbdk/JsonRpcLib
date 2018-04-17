@@ -7,7 +7,7 @@ namespace JsonRpcLib
 {
     internal static class Serializer
     {
-        public readonly static IJsonFormatterResolver Resolver = StandardResolver.AllowPrivateSnakeCase;
+        public readonly static IJsonFormatterResolver Resolver = StandardResolver.AllowPrivateExcludeNull;
 
         public static string Serialize<T>(T data) where T : new()
         {

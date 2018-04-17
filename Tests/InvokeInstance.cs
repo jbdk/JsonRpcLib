@@ -17,7 +17,7 @@ namespace Tests
         [Fact]
         public void Call_GivenTypesArgs()
         {
-            Response<object> reply = null;
+            Response<object> reply = default;
             Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
@@ -36,7 +36,7 @@ namespace Tests
         [Fact]
         public void Call_GivenIntStringBoolNull()
         {
-            Response<object> reply = null;
+            Response<object> reply = default;
             Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
@@ -59,7 +59,7 @@ namespace Tests
         [Fact]
         public void Call_WithIntToByteConversion()
         {
-            Response reply = null;
+            Response reply = default;
             Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
@@ -82,7 +82,7 @@ namespace Tests
         [Fact]
         public void Call_WithDefaultArgsValues()
         {
-            Response reply = null;
+            Response reply = default;
             Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
@@ -101,7 +101,7 @@ namespace Tests
         [Fact]
         public void Call_WithUIntArg_GivenInt()
         {
-            Response<object> reply = null;
+            Response<object> reply = default;
             Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
@@ -125,7 +125,7 @@ namespace Tests
         [Fact]
         public void Call_GivenDateTime()
         {
-            Response reply = null;
+            Response reply = default;
             Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
@@ -149,7 +149,7 @@ namespace Tests
         [Fact]
         public void Call_GivenTimeSpan()
         {
-            Response reply = null;
+            Response reply = default;
             Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
@@ -172,7 +172,7 @@ namespace Tests
         [Fact]
         public void Call_GivenStringArray()
         {
-            Response<object> reply = null;
+            Response<object> reply = default;
             Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
@@ -196,7 +196,7 @@ namespace Tests
         [Fact]
         public void ReturnPrimitiveArray()
         {
-            Response<object> reply = null;
+            Response<object> reply = default;
             Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
@@ -220,7 +220,7 @@ namespace Tests
         [Fact]
         public void ReturnStringArray()
         {
-            Response<object> reply = null;
+            Response<object> reply = default;
             Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();

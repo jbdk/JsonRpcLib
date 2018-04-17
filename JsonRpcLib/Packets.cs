@@ -23,7 +23,7 @@ namespace JsonRpcLib
     }
 
     [DataContract]
-    internal sealed class Error
+    internal struct Error
     {
         [DataMember(Name = "code")]
         public int Code { get; set; }
@@ -33,21 +33,30 @@ namespace JsonRpcLib
     }
 
     [DataContract]
-    internal class Response
+    internal struct Response
     {
         [DataMember(Name = "jsonrpc")]
-        public string JsonRpc { get; set; } = "2.0";
+        public string JsonRpc { get; set; }
 
         [DataMember(Name = "id")]
         public int Id { get; set; }
 
         [DataMember(Name = "error", EmitDefaultValue = false)]
-        public Error Error { get; set; }
+        public Error? Error { get; set; }
     }
 
     [DataContract]
-    internal sealed class Response<T> : Response
+    internal struct Response<T>
     {
+        [DataMember(Name = "jsonrpc")]
+        public string JsonRpc { get; set; }
+
+        [DataMember(Name = "id")]
+        public int Id { get; set; }
+
+        [DataMember(Name = "error", EmitDefaultValue = false)]
+        public Error? Error { get; set; }
+
         [DataMember(Name = "result")]
         public T Result { get; set; }
     }

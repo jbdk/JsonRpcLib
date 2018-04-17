@@ -25,7 +25,7 @@ namespace Tests
         [Fact]
         public void Call_StaticFunction()
         {
-            Response reply = null;
+            Response reply = default;
             Func<IClient, string, bool> process = (client, data) => false;
 
             var server = new JsonRpcServer();

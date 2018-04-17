@@ -20,10 +20,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmark", "Benchmark\Benchmark.csproj", "{204046F7-7060-4986-903A-0AC31CD37EF2}"
+EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -45,6 +44,10 @@ Global
 		{6E4B01E7-6CB4-474B-8BA3-E88DDF38B42D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6E4B01E7-6CB4-474B-8BA3-E88DDF38B42D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6E4B01E7-6CB4-474B-8BA3-E88DDF38B42D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{204046F7-7060-4986-903A-0AC31CD37EF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{204046F7-7060-4986-903A-0AC31CD37EF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{204046F7-7060-4986-903A-0AC31CD37EF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{204046F7-7060-4986-903A-0AC31CD37EF2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,8 +55,12 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{0ACFBC5A-F506-4633-AE93-2B6732053314} = {0F488790-9F61-4FDE-AA70-F8067F5053C7}
 		{6E4B01E7-6CB4-474B-8BA3-E88DDF38B42D} = {0F488790-9F61-4FDE-AA70-F8067F5053C7}
+		{204046F7-7060-4986-903A-0AC31CD37EF2} = {0F488790-9F61-4FDE-AA70-F8067F5053C7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DD63E35F-0DA5-4FBF-9074-DC0860E4A59E}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal
