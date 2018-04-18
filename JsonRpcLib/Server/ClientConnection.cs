@@ -39,12 +39,19 @@ namespace JsonRpcLib.Server
                 KillConnection();
             }
 
-            private void ProcessReceivedMessage(Memory<byte> data)
+            private void ProcessReceivedMessage(RentedBuffer buffer)
             {
-                var message = _encoding.GetString(data.Span);
-                if (!_process(this, message))
+                try
                 {
-                    KillConnection();
+                    var message = _encoding.GetString(buffer.Span);
+                    if (!_process(this, message))
+                    {
+                        KillConnection();
+                    }
+                }
+                finally
+                {
+                    buffer.Return();
                 }
             }
 

@@ -16,12 +16,12 @@ namespace JsonRpcLib
         private byte[] _packetBuffer;
         int _packetPosition;
         private readonly Stream _stream;
-        private readonly Action<Memory<byte>> _processLine;
+        private readonly Action<RentedBuffer> _processLine;
         private object _lock = new object();
 
         public Action ConnectionClosed { get; set; }
 
-        public AsyncLineReader(Stream stream, Action<Memory<byte>> processLine)
+        public AsyncLineReader(Stream stream, Action<RentedBuffer> processLine)
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
             _processLine = processLine ?? throw new ArgumentNullException(nameof(processLine));
@@ -64,8 +64,7 @@ namespace JsonRpcLib
                             _packetBuffer = _pool.Rent(PACKET_SIZE);
                             _packetPosition = 0;
 
-                            _processLine(p.AsMemory(0, size));
-                            _pool.Return(p);
+                            _processLine(new RentedBuffer(p, size, (mem) => _pool.Return(mem)));
                         }
                         else
                         {

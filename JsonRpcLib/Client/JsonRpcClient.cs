@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,7 +22,7 @@ namespace JsonRpcLib.Client
         private TimeSpan _timeout = TimeSpan.FromSeconds(5);
         private readonly Encoding _encoding;
         private readonly AsyncLineReader _lineReader;
-        private TaskCompletionSource<Memory<byte>> _pendingInvoke;
+        private BlockingQueue<RentedBuffer> _responseQueue = new BlockingQueue<RentedBuffer>();
 
         /// <summary>
         /// Get/Set read and write timeout 
@@ -31,7 +32,7 @@ namespace JsonRpcLib.Client
             get => _timeout;
             set {
                 _timeout = value;
-                //Stream.ReadTimeout = Stream.WriteTimeout = (int)value.TotalMilliseconds;
+                Stream.ReadTimeout = Stream.WriteTimeout = (int)value.TotalMilliseconds;
             }
         }
 
@@ -72,7 +73,7 @@ namespace JsonRpcLib.Client
                 Method = method,
             };
 
-            var response = InvokeHelper<Response>(request);
+            var response = InvokeHelper<object>(request);   // Just ignore result object
             if (response.Error != null)
                 throw new JsonRpcException(response.Error.Value);
             if (response.Id != request.Id)
@@ -92,7 +93,7 @@ namespace JsonRpcLib.Client
                 Params = args.Length == 0 ? null : args
             };
 
-            var response = InvokeHelper<Response<T>>(request);
+            var response = InvokeHelper<T>(request);
             if (response.Error != null)
                 throw new JsonRpcException(response.Error.Value);
             if (response.Id != request.Id)
@@ -101,16 +102,32 @@ namespace JsonRpcLib.Client
             return response.Result;
         }
 
-        private T InvokeHelper<T>(Request request)
+        private Response<T> InvokeHelper<T>(Request request)
         {
-            var pending = new TaskCompletionSource<Memory<byte>>();
-            _pendingInvoke = pending;
-
             Send(request);
-
-            if (!pending.Task.Wait(Timeout))
-                throw new TimeoutException();
-            return Serializer.Deserialize<T>(pending.Task.Result.Span);
+            while(true)
+            {
+                var data = _responseQueue.Dequeue((int)Timeout.TotalMilliseconds);
+                if (data.IsEmpty)
+                    throw new TimeoutException();
+                try
+                {
+                    var response = Serializer.Deserialize<Response<T>>(data.Span);
+                    if (response.Id == request.Id)
+                    {
+                        return response;
+                    }
+                    else
+                    {
+                        // Some other packet received.
+                        // Don't know what to do here yet !?!
+                    }
+                }
+                finally
+                {
+                    data.Return();
+                }
+            }
         }
 
         public void Flush() => Stream.Flush();
@@ -119,10 +136,9 @@ namespace JsonRpcLib.Client
         {
         }
 
-        private void ProcessReceivedMessage(Memory<byte> data)
+        private void ProcessReceivedMessage(RentedBuffer rented)
         {
-            var pending = Interlocked.Exchange<TaskCompletionSource<Memory<byte>>>(ref _pendingInvoke, null);
-            pending?.TrySetResult(data);
+            _responseQueue.Enqueue(rented);
         }
 
         private void Send<T>(T value, bool flush = true)
