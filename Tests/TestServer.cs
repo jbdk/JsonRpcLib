@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using JsonRpcLib.Server;
 
@@ -14,7 +15,7 @@ namespace Tests
 
         public TestServer(int port)
         {
-            IncommingMessageHook = (_, s) => LastMessageReceived = s;
+            IncommingMessageHook = (_, mem) => LastMessageReceived = Encoding.UTF8.GetString(mem.Span);
 
             Bind<StaticHandler>();
 

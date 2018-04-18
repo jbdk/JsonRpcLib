@@ -73,7 +73,7 @@ namespace JsonRpcLib.Server
             Debug.WriteLine($"Added handler for '{method}' on Delegate");
         }
 
-        internal void ExecuteHandler(ClientConnection client, int id, string method, object[] args)
+        internal void ExecuteHandler(ClientConnection client, int? id, string method, object[] args)
         {
             if (_handlers.TryGetValue(method, out var info))
             {
@@ -86,27 +86,29 @@ namespace JsonRpcLib.Server
 
                     // Now actually do the actual function call on the users class
                     object result = Invoke(args, info, hasOptionalParameters);
-                    if (id == -1)
+                    if (!id.HasValue)
                         return;     // Was a notify, so don't reply
 
                     // Reply to client
                     if (info.Method.ReturnParameter.ParameterType != typeof(void))
                     {
-                        SendResponse(client, id, result);
+                        SendResponse(client, id.Value, result);
                     }
                     else
                     {
-                        SendResponse(client, id);
+                        SendResponse(client, id.Value);
                     }
                 }
                 catch (Exception ex)
                 {
-                    SendError(client, id, $"Handler '{method}' threw an exception: {ex.Message}");
+                    if(id.HasValue)
+                        SendError(client, id.Value, $"Handler '{method}' threw an exception: {ex.Message}");
                 }
             }
             else
             {
-                SendUnknownMethodError(client, id, method);
+                if(id.HasValue)
+                    SendUnknownMethodError(client, id.Value, method);
             }
         }
 

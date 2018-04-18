@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.IO;
-using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Utf8Json;
-using Utf8Json.Resolvers;
 
 // REF: http://www.jsonrpc.org/specification
 
@@ -22,7 +17,7 @@ namespace JsonRpcLib.Client
         private TimeSpan _timeout = TimeSpan.FromSeconds(5);
         private readonly Encoding _encoding;
         private readonly AsyncLineReader _lineReader;
-        private BlockingQueue<RentedBuffer> _responseQueue = new BlockingQueue<RentedBuffer>();
+        private readonly BlockingQueue<RentedBuffer> _responseQueue = new BlockingQueue<RentedBuffer>();
 
         /// <summary>
         /// Get/Set read and write timeout 
@@ -53,7 +48,8 @@ namespace JsonRpcLib.Client
             if (string.IsNullOrWhiteSpace(method))
                 throw new ArgumentException("Can not be null or empty", nameof(method));
 
-            var request = new Notify {
+            var request = new Request {
+                JsonRpc = "2.0",
                 Method = method,
                 Params = args.Length == 0 ? null : args
             };
@@ -69,6 +65,7 @@ namespace JsonRpcLib.Client
                 throw new ArgumentException("Can not be null or empty", nameof(method));
 
             var request = new Request {
+                JsonRpc = "2.0",
                 Id = Interlocked.Increment(ref _nextId),
                 Method = method,
             };
@@ -88,6 +85,7 @@ namespace JsonRpcLib.Client
                 throw new ArgumentException("Can not be null or empty", nameof(method));
 
             var request = new Request {
+                JsonRpc = "2.0",
                 Id = Interlocked.Increment(ref _nextId),
                 Method = method,
                 Params = args.Length == 0 ? null : args

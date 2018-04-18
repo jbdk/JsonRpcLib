@@ -14,15 +14,16 @@ namespace Tests
 {
     public class InvokeInstance
     {
+        readonly Func<IClient, RentedBuffer, bool> _process = (client, data) => false;
+
         [Fact]
         public void Call_GivenTypesArgs()
         {
             Response<object> reply = default;
-            Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response<object>)o);
 
             server.Bind(handler);
@@ -37,11 +38,10 @@ namespace Tests
         public void Call_GivenIntStringBoolNull()
         {
             Response<object> reply = default;
-            Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response<object>)o);
 
             var reqOring = new Request() { Id = 1, Method = "FirstTest", Params = new object[] { 1, "string", false, null } };
@@ -60,11 +60,10 @@ namespace Tests
         public void Call_WithIntToByteConversion()
         {
             Response reply = default;
-            Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response)o);
 
             var reqOring = new Request() { Id = 81, Method = "ByteTest", Params = new object[] { 99 } };
@@ -83,11 +82,10 @@ namespace Tests
         public void Call_WithDefaultArgsValues()
         {
             Response reply = default;
-            Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response)o);
 
             server.Bind(handler);
@@ -102,11 +100,10 @@ namespace Tests
         public void Call_WithUIntArg_GivenInt()
         {
             Response<object> reply = default;
-            Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response<object>)o);
 
             var reqOring = new Request() { Id = 81, Method = "UIntTest", Params = new object[] { uint.MaxValue } };
@@ -126,11 +123,10 @@ namespace Tests
         public void Call_GivenDateTime()
         {
             Response reply = default;
-            Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response)o);
 
             var now = DateTime.Now;
@@ -150,11 +146,10 @@ namespace Tests
         public void Call_GivenTimeSpan()
         {
             Response reply = default;
-            Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response)o);
 
             var reqOring = new Request() { Id = 81, Method = "TimeSpanTest", Params = new object[] { TimeSpan.FromHours(4) } };
@@ -173,11 +168,10 @@ namespace Tests
         public void Call_GivenStringArray()
         {
             Response<object> reply = default;
-            Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response<object>)o);
 
             var reqOring = new Request() { Id = 3, Method = "StringArrayTest", Params = new object[] { new string[] { "one", "two", "tree", "four" } } };
@@ -197,11 +191,10 @@ namespace Tests
         public void ReturnPrimitiveArray()
         {
             Response<object> reply = default;
-            Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response<object>)o);
 
             var reqOring = new Request() { Id = 3, Method = "ReturnPrimitiveArray" };
@@ -221,11 +214,10 @@ namespace Tests
         public void ReturnStringArray()
         {
             Response<object> reply = default;
-            Func<IClient, string, bool> process = (client, data) => false;
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response<object>)o);
 
             var reqOring = new Request() { Id = 3, Method = "ReturnStringArray" };

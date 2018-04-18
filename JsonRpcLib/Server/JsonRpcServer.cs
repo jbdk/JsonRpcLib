@@ -18,7 +18,7 @@ namespace JsonRpcLib.Server
         private bool _disposed;
         private readonly ConcurrentDictionary<int, ClientConnection> _clients = new ConcurrentDictionary<int, ClientConnection>();
         public IList<IClient> Clients => _clients.Values.ToList<IClient>();
-        protected Action<IClient, string> IncommingMessageHook { get; set; }
+        protected Action<IClient, RentedBuffer> IncommingMessageHook { get; set; }
 
         /// <summary>
         /// Create a new JsorRpcServer instance
@@ -42,12 +42,12 @@ namespace JsonRpcLib.Server
             return client;
         }
 
-        private bool ProcessClientMessage(ClientConnection client, string data)
+        private bool ProcessClientMessage(ClientConnection client, RentedBuffer buffer)
         {
-            if (data == null)
+            if (buffer.IsEmpty)
             {
                 HandleDisconnect(client);
-                IncommingMessageHook?.Invoke(client, data);
+                IncommingMessageHook?.Invoke(client, buffer);
                 return false;
             }
 
@@ -55,7 +55,7 @@ namespace JsonRpcLib.Server
 
             try
             {
-                var request = Serializer.Deserialize<Request>(data);
+                var request = Serializer.Deserialize<Request>(buffer.Span);
                 ExecuteHandler(client, request.Id, request.Method, request.Params);
             }
             catch (Exception ex)
@@ -63,7 +63,7 @@ namespace JsonRpcLib.Server
                 Debug.WriteLine("Exception in JsonRpcServer.ProcessClientMessage(): " + ex.Message);
             }
 
-            IncommingMessageHook?.Invoke(client, data);
+            IncommingMessageHook?.Invoke(client, buffer);
             return true;    // Continue receiving data from client
         }
 

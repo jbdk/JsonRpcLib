@@ -23,7 +23,7 @@ namespace PerfTest
             try
             {
                 var tcpClient = _listener.EndAcceptTcpClient(ar);
-                tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+//                tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 
                 IClient client = AttachClient("1.2.3.4", tcpClient.GetStream());
                 ClientConnected.Set();

@@ -3,23 +3,19 @@
 namespace JsonRpcLib
 {
     [DataContract]
-    internal class Notify
+    internal struct Request
     {
         [DataMember(Name = "jsonrpc")]
-        public string JsonRpc { get; set; } = "2.0";
+        public string JsonRpc { get; set; }
 
         [DataMember(Name = "method")]
         public string Method { get; set; }
 
         [DataMember(Name = "params", EmitDefaultValue = false)]
         public object[] Params { get; set; }
-    }
 
-    [DataContract]
-    internal class Request : Notify
-    {
-        [DataMember(Name = "id")]
-        public int Id { get; set; } = -1;
+        [DataMember(Name = "id", EmitDefaultValue = false)]
+        public int? Id { get; set; }
     }
 
     [DataContract]

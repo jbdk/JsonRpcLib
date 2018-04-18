@@ -16,12 +16,12 @@ namespace JsonRpcLib.Server
             public string Address { get; }
 
             private readonly Stream _stream;
-            private readonly Func<ClientConnection, string, bool> _process;
+            private readonly Func<ClientConnection, RentedBuffer, bool> _process;
             private readonly ArrayPool<byte> _pool = ArrayPool<byte>.Shared;
             private readonly AsyncLineReader _lineReader;
             private readonly Encoding _encoding;
 
-            public ClientConnection(int id, string address, Stream stream, Func<ClientConnection, string, bool> process, Encoding encoding)
+            public ClientConnection(int id, string address, Stream stream, Func<ClientConnection, RentedBuffer, bool> process, Encoding encoding)
             {
                 _encoding = encoding ?? throw new ArgumentNullException(nameof(encoding));
                 Id = id;
@@ -43,8 +43,7 @@ namespace JsonRpcLib.Server
             {
                 try
                 {
-                    var message = _encoding.GetString(buffer.Span);
-                    if (!_process(this, message))
+                    if (!_process(this, buffer))
                     {
                         KillConnection();
                     }
@@ -97,7 +96,7 @@ namespace JsonRpcLib.Server
 
                 _stream.Dispose();
                 IsConnected = false;
-                _process(this, null);
+                _process(this, default);
             }
         }
     }

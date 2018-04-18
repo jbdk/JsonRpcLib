@@ -7,7 +7,7 @@ namespace PerfTest
 {
     public class MyClient : JsonRpcClient
     {
-        public MyClient(int port) : base(new TcpClient("127.0.0.1", port).GetStream())
+        public MyClient(int port) : base(new TcpClient("127.0.0.1", port) { NoDelay = true }.GetStream())
         {
             Timeout = Debugger.IsAttached ? TimeSpan.FromHours(1) : TimeSpan.FromSeconds(1);
         }
