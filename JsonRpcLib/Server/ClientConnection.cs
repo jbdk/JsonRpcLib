@@ -56,12 +56,14 @@ namespace JsonRpcLib.Server
 
             virtual public bool WriteString(string data)
             {
+                var buffer = _pool.Rent(data.Length * 2);
+
                 try
                 {
-                    var buffer = _pool.Rent(data.Length * 2);
                     var bytes = _encoding.GetBytes(data, buffer);
                     buffer[bytes++] = (byte)'\n';
-                    _stream.BeginWrite(buffer, 0, bytes, (ar) => _pool.Return((byte[])ar.AsyncState), buffer);
+                    _stream.Write(buffer, 0, bytes);
+                    _stream.Flush();
                     return true;
                 }
                 catch (Exception ex)
@@ -69,6 +71,10 @@ namespace JsonRpcLib.Server
                     Debug.WriteLine("Exception in ClientConnection.Write(): " + ex.Message);
                     KillConnection();
                     return false;
+                }
+                finally
+                {
+                    _pool.Return(buffer);
                 }
             }
 
@@ -80,7 +86,7 @@ namespace JsonRpcLib.Server
                 arraySegment.AsSpan().CopyTo(buffer);
                 buffer[len++] = (byte)'\n';
                 _stream.Write(buffer);
-                //_stream.Flush();
+                _stream.Flush();
             }
 
             public void Dispose()

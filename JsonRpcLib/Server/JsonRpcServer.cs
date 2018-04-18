@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
@@ -16,7 +17,7 @@ namespace JsonRpcLib.Server
         readonly private Encoding _encoding;
         private int _nextClientId;
         private bool _disposed;
-        private readonly ConcurrentDictionary<int, ClientConnection> _clients = new ConcurrentDictionary<int, ClientConnection>();
+        private readonly ConcurrentDictionary<int, IClient> _clients = new ConcurrentDictionary<int, IClient>();
         public IList<IClient> Clients => _clients.Values.ToList<IClient>();
         protected Action<IClient, RentedBuffer> IncommingMessageHook { get; set; }
 
@@ -42,7 +43,7 @@ namespace JsonRpcLib.Server
             return client;
         }
 
-        private bool ProcessClientMessage(ClientConnection client, RentedBuffer buffer)
+        private bool ProcessClientMessage(IClient client, RentedBuffer buffer)
         {
             if (buffer.IsEmpty)
             {
@@ -51,7 +52,8 @@ namespace JsonRpcLib.Server
                 return false;
             }
 
-            //DummyHandler(client, data);
+//            DummyHandler(client, buffer.Span);
+            //return true;
 
             try
             {
@@ -67,17 +69,19 @@ namespace JsonRpcLib.Server
             return true;    // Continue receiving data from client
         }
 
-        private void DummyHandler(ClientConnection client, string data)
+        private void DummyHandler(ClientConnection client, ReadOnlySpan<byte> span)
         {
-            int a = data.IndexOf("\"id\":") + 5;
+            var s = _encoding.GetString(span);
+
+            int a = s.IndexOf("\"id\":") + 5;
             int b = 0;
-            while (char.IsDigit(data[a + b]))
+            while (char.IsDigit(s[a + b]))
                 b++;
-            int id = int.Parse(data.AsSpan(a, b));
+            int id = int.Parse(s.AsSpan(a, b));
             client.WriteString($"{{\"jsonrpc\":\"2.0\",\"id\":{id}}}");
         }
 
-        private void HandleDisconnect(ClientConnection client)
+        private void HandleDisconnect(IClient client)
         {
             // Client connection closed or lost
             var result = _clients.TryRemove(client.Id, out var _);

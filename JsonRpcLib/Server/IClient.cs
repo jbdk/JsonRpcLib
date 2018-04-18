@@ -7,5 +7,8 @@ namespace JsonRpcLib.Server
         string Address { get; }
         int Id { get; }
         bool IsConnected { get; }
+
+        bool WriteString(string data);
+        void WriteAsJson(object value);
     }
 }

@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.CompilerServices;
-using System.Threading;
 
 namespace JsonRpcLib
 {
     internal class AsyncLineReader : IDisposable
     {
-        private const int BUFFER_SIZE = 1 * 1024 * 1024;
         const int PACKET_SIZE = 10 * 1024;
 
         private static readonly ArrayPool<byte> _pool = ArrayPool<byte>.Shared;
@@ -17,7 +15,6 @@ namespace JsonRpcLib
         int _packetPosition;
         private readonly Stream _stream;
         private readonly Action<RentedBuffer> _processLine;
-        private object _lock = new object();
 
         public Action ConnectionClosed { get; set; }
 
@@ -25,23 +22,20 @@ namespace JsonRpcLib
         {
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
             _processLine = processLine ?? throw new ArgumentNullException(nameof(processLine));
+
             BeginRead();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void BeginRead()
         {
             var buffer = _pool.Rent(PACKET_SIZE);
-            _stream.BeginRead(buffer, 0, buffer.Length, ReadCompleted, buffer);
+            _stream.ReadAsync(buffer, 0, buffer.Length).ContinueWith(t => ReadCompleted(buffer, t.Result));
         }
 
-        private void ReadCompleted(IAsyncResult ar)
+        private void ReadCompleted(byte[] data, int readCount)
         {
-            var data = (byte[])ar.AsyncState;
-
             try
             {
-                int readCount = _stream.EndRead(ar);
                 if (readCount <= 0)
                 {
                     ConnectionClosed?.Invoke();

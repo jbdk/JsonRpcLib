@@ -73,7 +73,7 @@ namespace JsonRpcLib.Server
             Debug.WriteLine($"Added handler for '{method}' on Delegate");
         }
 
-        internal void ExecuteHandler(ClientConnection client, int? id, string method, object[] args)
+        internal void ExecuteHandler(IClient client, int? id, string method, object[] args)
         {
             if (_handlers.TryGetValue(method, out var info))
             {
@@ -112,7 +112,7 @@ namespace JsonRpcLib.Server
             }
         }
 
-        private static void SendError(ClientConnection client, int id, string message)
+        private static void SendError(IClient client, int id, string message)
         {
             var response = new Response() {
                 Id = id,
@@ -121,7 +121,7 @@ namespace JsonRpcLib.Server
             client.WriteAsJson(response);
         }
 
-        private static void SendUnknownMethodError(ClientConnection client, int id, string method)
+        private static void SendUnknownMethodError(IClient client, int id, string method)
         {
             var response = new Response() {
                 Id = id,
@@ -130,7 +130,7 @@ namespace JsonRpcLib.Server
             client.WriteAsJson(response);
         }
 
-        private static void SendResponse(ClientConnection client, int id)
+        private static void SendResponse(IClient client, int id)
         {
             var response = new Response() {
                 Id = id
@@ -138,7 +138,7 @@ namespace JsonRpcLib.Server
             client.WriteAsJson(response);
         }
 
-        private static void SendResponse(ClientConnection client, int id, object result)
+        private static void SendResponse(IClient client, int id, object result)
         {
             var response = new Response<object>() {
                 Id = id,
