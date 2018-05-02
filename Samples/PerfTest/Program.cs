@@ -24,7 +24,9 @@ namespace PerfTest
 
                 JsonRpcClient[] clients = new JsonRpcClient[threadCount];
                 for (int i = 0; i < threadCount; i++)
+                {
                     clients[i] = MyClient.ConnectAsync(port).Result;
+                }
 
                 RunNotifyTest(threadCount, testCount, clients);
                 RunInvokeTest(threadCount, testCount / 10, clients);
@@ -66,7 +68,9 @@ namespace PerfTest
             }
 
             while (!Task.WhenAll(tasks).Wait(100))
+            {
                 Console.Write($"  {Target.Counter}\r");
+            }
 
             var t1 = sw.ElapsedMilliseconds;
             Console.WriteLine("  {1} r/s ({0}ms elapsed) ", t1, (int)( (double)testCount / ( (double)t1 / 1000 ) ));
@@ -85,7 +89,7 @@ namespace PerfTest
             for (int i = 0; i < testCount; i++)
             {
                 client.Invoke("SpeedNoArgs");
-                Interlocked.Increment(ref Target.Counter);
+                //Interlocked.Increment(ref Target.Counter);
             }
         }
     }

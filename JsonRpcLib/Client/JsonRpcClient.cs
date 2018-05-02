@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.IO.Pipelines;
 using System.Text;
+using System.Text.Formatting;
 using System.Threading;
 using System.Threading.Tasks;
 using Utf8Json;
@@ -125,7 +126,7 @@ namespace JsonRpcLib.Client
                 }
                 finally
                 {
-                    data.Return();
+                    data.Dispose();
                 }
             }
         }

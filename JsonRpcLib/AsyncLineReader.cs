@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.IO.Pipelines;
+using System.IO.Pipelines.Text.Primitives;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace JsonRpcLib
 {
     internal class AsyncLineReader : IDisposable
     {
-        private static readonly ArrayPool<byte> _pool = ArrayPool<byte>.Shared;
+        private static readonly MemoryPool<byte> _pool = MemoryPool<byte>.Shared;
+
         private readonly PipeReader _reader;
         private readonly Action<RentedBuffer> _processLine;
         private readonly Task _readerThread;
@@ -18,7 +22,7 @@ namespace JsonRpcLib
         {
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
             _processLine = processLine ?? throw new ArgumentNullException(nameof(processLine));
-            _readerThread = Task.Factory.StartNew(ReaderThread, TaskCreationOptions.LongRunning);
+            _readerThread = Task.Factory.StartNew(ReaderThread);
         }
 
         private async void ReaderThread()
@@ -33,6 +37,7 @@ namespace JsonRpcLib
                     if (result.IsCompleted && result.Buffer.IsEmpty)
                     {
                         // No more data
+                        ConnectionClosed?.Invoke();
                         break;
                     }
 
@@ -43,8 +48,16 @@ namespace JsonRpcLib
 
                         int size = (int)slice.Length;
                         var block = _pool.Rent(size);
-                        slice.CopyTo(block);
-                        _processLine(new RentedBuffer(block, size, (mem) => _pool.Return(mem)));
+                        slice.CopyTo(block.Memory.Span);
+
+                        try
+                        {
+                            _processLine(new RentedBuffer(block, size));
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error processing line \"{slice.GetUtf8Span()}\": {ex.Message}");
+                        }
                     }
                 }
                 finally

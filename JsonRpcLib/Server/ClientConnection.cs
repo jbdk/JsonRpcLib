@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Buffers;
 using System.Diagnostics;
-using System.IO;
 using System.IO.Pipelines;
 using System.Text;
 using Utf8Json;
@@ -51,7 +50,7 @@ namespace JsonRpcLib.Server
                 }
                 finally
                 {
-                    buffer.Return();
+                    buffer.Dispose();
                 }
             }
 

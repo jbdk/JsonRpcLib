@@ -1,26 +1,25 @@
 ﻿using System;
+using System.Buffers;
 
 namespace JsonRpcLib
 {
-    public struct RentedBuffer
+    public struct RentedBuffer : IDisposable
     {
-        private readonly byte[] _buffer;
+        private readonly IMemoryOwner<byte> _memory;
         private readonly int _length;
-        private readonly Action<byte[]> _returnBuffer;
 
-        public bool IsEmpty => _buffer == null;
-        public Span<byte> Span => _buffer.AsSpan(0, _length);
+        public bool IsEmpty => _memory == null;
+        public Span<byte> Span => _memory.Memory.Span.Slice(0, _length);
 
-        public RentedBuffer(byte[] buffer, int length, Action<byte[]> returnBuffer)
+        public RentedBuffer(IMemoryOwner<byte> memory, int length)
         {
-            _buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+            _memory = memory ?? throw new ArgumentNullException(nameof(memory));
             _length = length;
-            _returnBuffer = returnBuffer ?? throw new ArgumentNullException(nameof(returnBuffer));
         }
 
-        public void Return()
+        public void Dispose()
         {
-            _returnBuffer?.Invoke(_buffer);
+            _memory.Dispose();
         }
     }
 }
