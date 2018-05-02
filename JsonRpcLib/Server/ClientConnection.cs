@@ -85,7 +85,7 @@ namespace JsonRpcLib.Server
                 var len = arraySegment.Count;
                 Span<byte> buffer = stackalloc byte[len + 1];
                 arraySegment.AsSpan().CopyTo(buffer);
-                buffer[len] = (byte)'\n';
+                buffer[len++] = (byte)'\n';
                 _duplexPipe.Output.Write(buffer);
                 _duplexPipe.Output.FlushAsync();
             }

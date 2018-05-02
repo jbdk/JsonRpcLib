@@ -115,6 +115,7 @@ namespace JsonRpcLib.Server
         private static void SendError(IClient client, int id, string message)
         {
             var response = new Response() {
+                JsonRpc = "2.0",
                 Id = id,
                 Error = new Error() { Code = -1, Message = message }
             };
@@ -124,6 +125,7 @@ namespace JsonRpcLib.Server
         private static void SendUnknownMethodError(IClient client, int id, string method)
         {
             var response = new Response() {
+                JsonRpc = "2.0",
                 Id = id,
                 Error = new Error() { Code = -32601, Message = $"Unknown method '{method}'" }
             };
@@ -133,6 +135,7 @@ namespace JsonRpcLib.Server
         private static void SendResponse(IClient client, int id)
         {
             var response = new Response() {
+                JsonRpc = "2.0",
                 Id = id
             };
             client.WriteAsJson(response);
@@ -141,6 +144,7 @@ namespace JsonRpcLib.Server
         private static void SendResponse(IClient client, int id, object result)
         {
             var response = new Response<object>() {
+                JsonRpc = "2.0",
                 Id = id,
                 Result = result
             };

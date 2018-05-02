@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Threading.Tasks;
 
@@ -8,11 +7,7 @@ namespace JsonRpcLib
 {
     internal class AsyncLineReader : IDisposable
     {
-        const int PACKET_SIZE = 1 * 1024 * 1024;
-
         private static readonly ArrayPool<byte> _pool = ArrayPool<byte>.Shared;
-        private byte[] _packetBuffer;
-        int _packetPosition;
         private readonly PipeReader _reader;
         private readonly Action<RentedBuffer> _processLine;
         private readonly Task _readerThread;
@@ -28,44 +23,39 @@ namespace JsonRpcLib
 
         private async void ReaderThread()
         {
-            while(true)
+            while (true)
             {
                 var result = await _reader.ReadAsync();
-                if(result.IsCompleted && result.Buffer.IsEmpty)
-                {
-                    // Connection closed
-                    break;
-                }
+                var input = result.Buffer;
 
-                var inputBuffer = result.Buffer;
-                var startPos = inputBuffer.GetPosition(0);
-                int offset = 0;
-
-                foreach (var buffer in inputBuffer)
+                try
                 {
-                    for (int i = 0; i < buffer.Length; i++)
+                    if (result.IsCompleted && result.Buffer.IsEmpty)
                     {
-                        if (buffer.Span[i] == '\n')
-                        {
-                            var  endPos = inputBuffer.GetPosition(offset);
-                            var slice = inputBuffer.Slice(startPos, endPos);
-                            int size = (int)slice.Length;
-                            if (size > 0)
-                            {
-                                var block = _pool.Rent(size);
-                                slice.CopyTo(block);
-                                startPos = inputBuffer.GetPosition(offset + 1);
+                        // No more data
+                        break;
+                    }
 
-                                _processLine(new RentedBuffer(block, size, (mem) => _pool.Return(mem)));
-                            }
-                        }
+                    // Extract each line from the input
+                    while (input.TrySliceTo((byte)'\n', out var slice, out var cursor))
+                    {
+                        input = input.Slice(cursor).Slice(1);
 
-                        offset++;
+                        int size = (int)slice.Length;
+                        var block = _pool.Rent(size);
+                        slice.CopyTo(block);
+
+                        _processLine(new RentedBuffer(block, size, (mem) => _pool.Return(mem)));
                     }
                 }
-
-                _reader.AdvanceTo(startPos, inputBuffer.End);
+                finally
+                {
+                    // // Consume the input
+                    _reader.AdvanceTo(input.Start, input.End);
+                }
             }
+
+            _reader.Complete();
         }
 
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
@@ -74,4 +64,5 @@ namespace JsonRpcLib
             GC.SuppressFinalize(this);
         }
     }
+
 }

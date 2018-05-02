@@ -14,8 +14,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.IO.Pipelines.Extensions" Version="0.1.0-preview2-180502-1" />
-    <PackageReference Include="System.IO.Pipelines.Networking.Sockets" Version="0.1.0-preview2-180502-1" />
+    <PackageReference Include="System.IO.Pipelines.Extensions" Version="0.1.0-preview2-180502-4" />
+    <PackageReference Include="System.IO.Pipelines.Networking.Sockets" Version="0.1.0-preview2-180502-4" />
+    <PackageReference Include="System.IO.Pipelines.Text.Primitives" Version="0.1.0-preview2-180502-4" />
   </ItemGroup>
 
   <ItemGroup>

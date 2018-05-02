@@ -3,15 +3,22 @@ using System.Diagnostics;
 using System.IO.Pipelines.Networking.Sockets;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using JsonRpcLib.Client;
 
 namespace PerfTest
 {
-    public class MyClient : JsonRpcClient
+    public class MyClient
     {
-        public MyClient(int port) : base(SocketConnection.ConnectAsync(new IPEndPoint(IPAddress.Loopback, port)).Result)
+        private readonly SocketConnection _conn;
+
+        public static async Task<JsonRpcClient> ConnectAsync(int port)
         {
-            Timeout = Debugger.IsAttached ? TimeSpan.FromHours(1) : TimeSpan.FromSeconds(1);
+            var c = await SocketConnection.ConnectAsync(new IPEndPoint(IPAddress.Loopback, port));
+            return new JsonRpcClient(c) {
+                Timeout = Debugger.IsAttached ? TimeSpan.FromHours(1) : TimeSpan.FromSeconds(1)
+            };
         }
     }
 }
+
