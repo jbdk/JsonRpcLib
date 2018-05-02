@@ -14,6 +14,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.IO.Pipelines.Extensions" Version="0.1.0-preview2-180502-1" />
+    <PackageReference Include="System.IO.Pipelines.Networking.Sockets" Version="0.1.0-preview2-180502-1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\JsonRpcLib\JsonRpcLib.csproj" />
   </ItemGroup>
 

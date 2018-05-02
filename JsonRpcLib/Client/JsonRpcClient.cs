@@ -1,5 +1,6 @@
 ﻿using System;
-using System.IO;
+using System.Buffers;
+using System.IO.Pipelines;
 using System.Text;
 using System.Threading;
 using Utf8Json;
@@ -10,11 +11,11 @@ namespace JsonRpcLib.Client
 {
     public class JsonRpcClient : IDisposable
     {
-        public Stream Stream { get; }
         private bool _disposed;
         private int _nextId;
         private bool _captureMode;
         private TimeSpan _timeout = TimeSpan.FromSeconds(5);
+        private readonly IDuplexPipe _duplexPipe;
         private readonly Encoding _encoding;
         private readonly AsyncLineReader _lineReader;
         private readonly BlockingQueue<RentedBuffer> _responseQueue = new BlockingQueue<RentedBuffer>();
@@ -27,16 +28,14 @@ namespace JsonRpcLib.Client
             get => _timeout;
             set {
                 _timeout = value;
-                Stream.ReadTimeout = Stream.WriteTimeout = (int)value.TotalMilliseconds;
             }
         }
 
-        public JsonRpcClient(Stream baseStream, Encoding encoding = null)
+        public JsonRpcClient(IDuplexPipe duplexPipe, Encoding encoding = null)
         {
-            Stream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
-            Stream.ReadTimeout = Stream.WriteTimeout = (int)Timeout.TotalMilliseconds;
+            _duplexPipe = duplexPipe ?? throw new ArgumentNullException(nameof(duplexPipe));
             _encoding = encoding ?? Encoding.UTF8;
-            _lineReader = new AsyncLineReader(Stream, ProcessReceivedMessage) {
+            _lineReader = new AsyncLineReader(duplexPipe.Input, ProcessReceivedMessage) {
                 ConnectionClosed = ConnectionClosed
             };
         }
@@ -103,7 +102,7 @@ namespace JsonRpcLib.Client
         private Response<T> InvokeHelper<T>(Request request)
         {
             Send(request);
-            while(true)
+            while (true)
             {
                 var data = _responseQueue.Dequeue((int)Timeout.TotalMilliseconds);
                 if (data.IsEmpty)
@@ -128,7 +127,9 @@ namespace JsonRpcLib.Client
             }
         }
 
-        public void Flush() => Stream.Flush();
+        public void Flush()
+        {
+        }
 
         private void ConnectionClosed()
         {
@@ -146,9 +147,11 @@ namespace JsonRpcLib.Client
             Span<byte> buffer = stackalloc byte[len + 1];
             arraySegment.AsSpan().CopyTo(buffer);
             buffer[len++] = (byte)'\n';
-            Stream.Write(buffer);
-            if (flush)
-                Stream.Flush();
+            _duplexPipe.Output.Write(buffer);
+            _duplexPipe.Output.FlushAsync().AsTask().Wait();
+            //Stream.Write(buffer);
+            //if (flush)
+            //    Stream.Flush();
         }
 
         /// <summary>
@@ -206,7 +209,7 @@ namespace JsonRpcLib.Client
             if (_disposed)
                 return;
 
-            Stream?.Dispose();
+           ((IDisposable)_duplexPipe)?.Dispose();
             _lineReader?.Dispose();
             GC.SuppressFinalize(this);
 

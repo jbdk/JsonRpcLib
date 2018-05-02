@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -30,13 +31,13 @@ namespace JsonRpcLib.Server
             _encoding = encoding ?? Encoding.UTF8;
         }
 
-        public IClient AttachClient(string address, Stream stream)
+        public IClient AttachClient(string address, IDuplexPipe duplexPipe)
         {
-            if (stream == null)
-                throw new ArgumentNullException(nameof(stream));
+            if (duplexPipe == null)
+                throw new ArgumentNullException(nameof(duplexPipe));
 
             var id = Interlocked.Increment(ref _nextClientId);
-            var client = new ClientConnection(id, address, stream, ProcessClientMessage, _encoding);
+            var client = new ClientConnection(id, address, duplexPipe, ProcessClientMessage, _encoding);
 
             _clients.TryAdd(id, client);
             Debug.WriteLine($"#{id} JsonRpc client added");

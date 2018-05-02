@@ -1,83 +1,70 @@
 ﻿using System;
 using System.Buffers;
 using System.Diagnostics;
-using System.IO;
+using System.IO.Pipelines;
+using System.Threading.Tasks;
 
 namespace JsonRpcLib
 {
     internal class AsyncLineReader : IDisposable
     {
-        const int PACKET_SIZE = 10 * 1024;
+        const int PACKET_SIZE = 1 * 1024 * 1024;
 
         private static readonly ArrayPool<byte> _pool = ArrayPool<byte>.Shared;
         private byte[] _packetBuffer;
         int _packetPosition;
-        private readonly Stream _stream;
+        private readonly PipeReader _reader;
         private readonly Action<RentedBuffer> _processLine;
+        private readonly Task _readerThread;
 
         public Action ConnectionClosed { get; set; }
 
-        public AsyncLineReader(Stream stream, Action<RentedBuffer> processLine)
+        public AsyncLineReader(PipeReader reader, Action<RentedBuffer> processLine)
         {
-            _stream = stream ?? throw new ArgumentNullException(nameof(stream));
+            _reader = reader ?? throw new ArgumentNullException(nameof(reader));
             _processLine = processLine ?? throw new ArgumentNullException(nameof(processLine));
-
-            BeginRead();
+            _readerThread = Task.Factory.StartNew(ReaderThread, TaskCreationOptions.LongRunning);
         }
 
-        private void BeginRead()
+        private async void ReaderThread()
         {
-            var buffer = _pool.Rent(PACKET_SIZE);
-            _stream.ReadAsync(buffer, 0, buffer.Length).ContinueWith(t => ReadCompleted(buffer, t.Result));
-        }
-
-        private void ReadCompleted(byte[] data, int readCount)
-        {
-            try
+            while(true)
             {
-                if (readCount <= 0)
+                var result = await _reader.ReadAsync();
+                if(result.IsCompleted && result.Buffer.IsEmpty)
                 {
-                    ConnectionClosed?.Invoke();
-                    return;
+                    // Connection closed
+                    break;
                 }
 
-                try
-                {
-                    if (_packetBuffer == null)
-                    {
-                        _packetBuffer = _pool.Rent(PACKET_SIZE);
-                        _packetPosition = 0;
-                    }
-                    for (int i = 0; i < readCount; i++)
-                    {
-                        if (data[i] == '\n')
-                        {
-                            int size = _packetPosition;
-                            var p = _packetBuffer;
-                            _packetBuffer = _pool.Rent(PACKET_SIZE);
-                            _packetPosition = 0;
+                var inputBuffer = result.Buffer;
+                var startPos = inputBuffer.GetPosition(0);
+                int offset = 0;
 
-                            _processLine(new RentedBuffer(p, size, (mem) => _pool.Return(mem)));
-                        }
-                        else
+                foreach (var buffer in inputBuffer)
+                {
+                    for (int i = 0; i < buffer.Length; i++)
+                    {
+                        if (buffer.Span[i] == '\n')
                         {
-                            _packetBuffer[_packetPosition++] = data[i];
+                            var  endPos = inputBuffer.GetPosition(offset);
+                            var slice = inputBuffer.Slice(startPos, endPos);
+                            int size = (int)slice.Length;
+                            if (size > 0)
+                            {
+                                var block = _pool.Rent(size);
+                                slice.CopyTo(block);
+                                startPos = inputBuffer.GetPosition(offset + 1);
+
+                                _processLine(new RentedBuffer(block, size, (mem) => _pool.Return(mem)));
+                            }
                         }
+
+                        offset++;
                     }
                 }
-                finally
-                {
-                    BeginRead();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Exception in AsyncStreamReader.ReadCompleted: " + ex.Message);
-                ConnectionClosed?.Invoke();
-            }
-            finally
-            {
-                _pool.Return(data);
+
+                _reader.AdvanceTo(startPos, inputBuffer.End);
             }
         }
 

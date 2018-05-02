@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO.Pipelines;
 using System.IO.Pipelines.Networking.Sockets;
 using System.Linq;
 using System.Net;
