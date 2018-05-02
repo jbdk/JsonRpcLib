@@ -12,6 +12,8 @@ namespace JsonRpcLib.Client
 {
     public class JsonRpcClient : IDisposable
     {
+        private const string JSONRPC = "2.0";
+
         private bool _disposed;
         private int _nextId;
         private bool _captureMode;
@@ -49,7 +51,7 @@ namespace JsonRpcLib.Client
                 throw new ArgumentException("Can not be null or empty", nameof(method));
 
             var request = new Request {
-                JsonRpc = "2.0",
+                JsonRpc = JSONRPC,
                 Method = method,
                 Params = args.Length == 0 ? null : args
             };
@@ -65,7 +67,7 @@ namespace JsonRpcLib.Client
                 throw new ArgumentException("Can not be null or empty", nameof(method));
 
             var request = new Request {
-                JsonRpc = "2.0",
+                JsonRpc = JSONRPC,
                 Id = Interlocked.Increment(ref _nextId),
                 Method = method,
             };
@@ -85,7 +87,7 @@ namespace JsonRpcLib.Client
                 throw new ArgumentException("Can not be null or empty", nameof(method));
 
             var request = new Request {
-                JsonRpc = "2.0",
+                JsonRpc = JSONRPC,
                 Id = Interlocked.Increment(ref _nextId),
                 Method = method,
                 Params = args.Length == 0 ? null : args
@@ -150,6 +152,16 @@ namespace JsonRpcLib.Client
             buffer[len++] = (byte)'\n';
             _duplexPipe.Output.Write(buffer);
             _duplexPipe.Output.FlushAsync();
+
+            /*
+            var arraySegment = JsonSerializer.SerializeUnsafe(value, Serializer.Resolver);
+            var len = arraySegment.Count;
+            var buffer = _duplexPipe.Output.GetMemory(len + 1);
+            arraySegment.AsSpan().CopyTo(buffer.Span);
+            buffer.Span[len++] = (byte)'\n';
+            await _duplexPipe.Output.WriteAsync(buffer.Slice(0, len));
+            await _duplexPipe.Output.FlushAsync();
+             */
         }
 
         /// <summary>

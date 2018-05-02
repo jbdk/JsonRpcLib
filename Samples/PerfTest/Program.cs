@@ -41,7 +41,7 @@ namespace PerfTest
             for (int i = 0; i < threadCount; i++)
             {
                 var client = clients[i];
-                Task.Factory.StartNew(() => NotifyTest(client, testCount / threadCount), TaskCreationOptions.LongRunning);
+                Task.Factory.StartNew(() => NotifyTest(client, testCount / threadCount));
             }
 
             while (!completed.Wait(100))

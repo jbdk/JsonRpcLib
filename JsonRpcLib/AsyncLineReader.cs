@@ -44,7 +44,6 @@ namespace JsonRpcLib
                         int size = (int)slice.Length;
                         var block = _pool.Rent(size);
                         slice.CopyTo(block);
-
                         _processLine(new RentedBuffer(block, size, (mem) => _pool.Return(mem)));
                     }
                 }
@@ -55,7 +54,7 @@ namespace JsonRpcLib
                 }
             }
 
-            _reader.Complete();
+            //_reader.Complete();
         }
 
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
