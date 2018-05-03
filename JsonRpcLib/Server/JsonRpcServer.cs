@@ -53,8 +53,9 @@ namespace JsonRpcLib.Server
                 return false;
             }
 
-//            DummyHandler(client, buffer.Span);
-            //return true;
+#if false
+            DummyHandler(client, buffer.Span);
+#else
 
             try
             {
@@ -67,10 +68,12 @@ namespace JsonRpcLib.Server
             }
 
             IncommingMessageHook?.Invoke(client, buffer);
+#endif
+
             return true;    // Continue receiving data from client
         }
 
-        private void DummyHandler(ClientConnection client, ReadOnlySpan<byte> span)
+        private void DummyHandler(IClient client, ReadOnlySpan<byte> span)
         {
             var s = _encoding.GetString(span);
 

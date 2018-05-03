@@ -87,7 +87,7 @@ namespace JsonRpcLib.Server
                 arraySegment.AsSpan().CopyTo(buffer);
                 buffer[len++] = (byte)'\n';
                 _duplexPipe.Output.Write(buffer);
-                _duplexPipe.Output.FlushAsync();//.GetAwaiter().GetResult();
+                _duplexPipe.Output.FlushAsync();
             }
 
             public void Dispose()
