@@ -13,6 +13,7 @@ namespace PerfTest
     {
         readonly SocketListener _listener;
         public ManualResetEventSlim ClientConnected { get; } = new ManualResetEventSlim();
+        TaskCompletionSource<int> _tcs = new TaskCompletionSource<int>();
 
         public MyServer(int port)
         {
@@ -25,11 +26,12 @@ namespace PerfTest
         {
             IClient client = AttachClient("1.2.3.4", connection);
             ClientConnected.Set();
-            return Task.CompletedTask;
+            return _tcs.Task;
         }
 
         public override void Dispose()
         {
+            _tcs.TrySetCanceled();
             _listener?.Stop();
             base.Dispose();
         }

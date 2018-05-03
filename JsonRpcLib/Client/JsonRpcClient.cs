@@ -146,23 +146,25 @@ namespace JsonRpcLib.Client
 
         private void Send<T>(T value, bool flush = true)
         {
+#if true
             var arraySegment = JsonSerializer.SerializeUnsafe(value, Serializer.Resolver);
             var len = arraySegment.Count;
             Span<byte> buffer = stackalloc byte[len + 1];
             arraySegment.AsSpan().CopyTo(buffer);
             buffer[len++] = (byte)'\n';
             _duplexPipe.Output.Write(buffer);
-            _duplexPipe.Output.FlushAsync();
-
-            /*
+            var w = _duplexPipe.Output.FlushAsync();
+            if (flush)
+                w.GetAwaiter().GetResult();
+#else
             var arraySegment = JsonSerializer.SerializeUnsafe(value, Serializer.Resolver);
             var len = arraySegment.Count;
             var buffer = _duplexPipe.Output.GetMemory(len + 1);
             arraySegment.AsSpan().CopyTo(buffer.Span);
             buffer.Span[len++] = (byte)'\n';
-            await _duplexPipe.Output.WriteAsync(buffer.Slice(0, len));
-            await _duplexPipe.Output.FlushAsync();
-             */
+            _duplexPipe.Output.Write(buffer.Slice(0, len).Span);
+            _duplexPipe.Output.FlushAsync();
+#endif
         }
 
         /// <summary>

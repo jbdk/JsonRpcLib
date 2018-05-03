@@ -22,10 +22,10 @@ namespace JsonRpcLib
         {
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
             _processLine = processLine ?? throw new ArgumentNullException(nameof(processLine));
-            _readerThread = Task.Factory.StartNew(ReaderThread);
+            _readerThread = Task.Factory.StartNew(ReaderThread, TaskCreationOptions.LongRunning);
         }
 
-        private async void ReaderThread()
+        private async Task ReaderThread()
         {
             while (true)
             {

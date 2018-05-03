@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Text;
+using System.Threading.Tasks;
 using Utf8Json;
 
 namespace JsonRpcLib.Server
@@ -86,7 +87,7 @@ namespace JsonRpcLib.Server
                 arraySegment.AsSpan().CopyTo(buffer);
                 buffer[len++] = (byte)'\n';
                 _duplexPipe.Output.Write(buffer);
-                _duplexPipe.Output.FlushAsync();
+                _duplexPipe.Output.FlushAsync();//.GetAwaiter().GetResult();
             }
 
             public void Dispose()
