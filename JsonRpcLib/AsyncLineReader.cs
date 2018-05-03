@@ -62,12 +62,12 @@ namespace JsonRpcLib
                 }
                 finally
                 {
-                    // // Consume the input
+                    // Consume the input
                     _reader.AdvanceTo(input.Start, input.End);
                 }
             }
 
-            //_reader.Complete();
+            _reader.Complete();
         }
 
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>

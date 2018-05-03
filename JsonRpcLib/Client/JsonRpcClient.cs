@@ -2,9 +2,7 @@
 using System.Buffers;
 using System.IO.Pipelines;
 using System.Text;
-using System.Text.Formatting;
 using System.Threading;
-using System.Threading.Tasks;
 using Utf8Json;
 
 // REF: http://www.jsonrpc.org/specification
@@ -108,7 +106,7 @@ namespace JsonRpcLib.Client
             Send(request);
             while (true)
             {
-                var data = _responseQueue.Dequeue((int)Timeout.TotalMilliseconds);
+                RentedBuffer data = _responseQueue.Dequeue((int)Timeout.TotalMilliseconds);
                 if (data.IsEmpty)
                     throw new TimeoutException();
                 try

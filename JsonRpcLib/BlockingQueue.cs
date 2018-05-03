@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -25,8 +26,8 @@ namespace JsonRpcLib
             lock (_queue)
             {
                 _queue.Add(item);
-                _semaphore.Release();
             }
+            _semaphore.Release();
         }
 
         /// <summary>
@@ -38,8 +39,8 @@ namespace JsonRpcLib
             lock (_queue)
             {
                 _queue.Insert(0, item);
-                _semaphore.Release();
             }
+            _semaphore.Release();
         }
 
         /// <summary>

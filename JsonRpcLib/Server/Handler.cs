@@ -13,6 +13,7 @@ namespace JsonRpcLib.Server
         {
             public object Instance { get; internal set; }
             public MethodInfo Method { get; internal set; }
+            public ParameterInfo[] Parameters { get; internal set; }
             public Delegate Call { get; internal set; }
         }
 
@@ -67,6 +68,7 @@ namespace JsonRpcLib.Server
             var info = new HandlerInfo {
                 Instance = null,
                 Method = call.Method,
+                Parameters = call.Method.GetParameters(),
                 Call = call
             };
             _handlers.TryAdd(method, info);
@@ -82,7 +84,7 @@ namespace JsonRpcLib.Server
                     // Make sure arguments are correct for the function call
                     bool hasOptionalParameters = false;
                     if (args != null)
-                        PrepareArguments(info.Method, ref args, out hasOptionalParameters);
+                        PrepareArguments(info, ref args, out hasOptionalParameters);
 
                     // Now actually do the actual function call on the users class
                     object result = Invoke(args, info, hasOptionalParameters);
@@ -177,10 +179,10 @@ namespace JsonRpcLib.Server
             return result;
         }
 
-        private void PrepareArguments(MethodInfo method, ref object[] args, out bool hasOptionalParameters)
+        private void PrepareArguments(HandlerInfo info, ref object[] args, out bool hasOptionalParameters)
         {
             hasOptionalParameters = false;
-            var p = method.GetParameters();
+            var p = info.Parameters;
             int neededArgs = p.Count(x => !x.HasDefaultValue);
             if (neededArgs > args.Length)
                 throw new JsonRpcException($"Argument count mismatch (Expected at least {neededArgs}, but got only {args.Length}");
