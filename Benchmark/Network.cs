@@ -71,7 +71,7 @@ namespace Benchmark
                 var pendingRead = _pipeClient.Input.ReadAsync();
 
                 await _pipeClient.Output.WriteAsync(_request);
-                _pipeClient.Output.FlushAsync();
+                await _pipeClient.Output.FlushAsync();
                 var result = await pendingRead;
                 Debug.Assert(result.Buffer.Length == _request.Length);
                 _pipeClient.Input.AdvanceTo(result.Buffer.End);
