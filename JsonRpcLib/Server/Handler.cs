@@ -48,6 +48,7 @@ namespace JsonRpcLib.Server
             var info = new HandlerInfo {
                 Instance = instance,
                 Method = m,
+                Parameters = m.GetParameters(),
                 Call = instance != null ? Reflection.CreateDelegate(instance, m) : Reflection.CreateDelegate(m)
             };
             _handlers.TryAdd(name, info);
@@ -180,6 +181,11 @@ namespace JsonRpcLib.Server
 
         private void PrepareArguments(HandlerInfo info, ref object[] args, out bool hasOptionalParameters)
         {
+            if (info == null)
+                throw new ArgumentNullException(nameof(info));
+            if(info.Parameters == null)
+                throw new ArgumentException("info.Parameters can not be null");
+
             hasOptionalParameters = false;
             var p = info.Parameters;
             int neededArgs = p.Count(x => !x.HasDefaultValue);

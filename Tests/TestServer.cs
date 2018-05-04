@@ -1,44 +1,35 @@
-﻿using System;
+﻿using System.IO.Pipelines.Networking.Sockets;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using JsonRpcLib.Server;
 
 namespace Tests
 {
     public class TestServer : JsonRpcServer
     {
-        readonly TcpListener _listener;
+        readonly SocketListener _listener;
         public ManualResetEventSlim ClientConnected { get; } = new ManualResetEventSlim();
+        TaskCompletionSource<int> _tcs = new TaskCompletionSource<int>();
         public string LastMessageReceived { get; private set; }
 
         public TestServer(int port)
         {
             IncommingMessageHook = (_, mem) => LastMessageReceived = Encoding.UTF8.GetString(mem.Span);
 
-            Bind<StaticHandler>();
+            _listener = new SocketListener();
+            _listener.Start(new IPEndPoint(IPAddress.Loopback, port));
+            _listener.OnConnection(OnConnection);
 
-            _listener = new TcpListener(IPAddress.Loopback, port);
-            _listener.Start();
-            _listener.BeginAcceptTcpClient(AcceptCallback, this);
+            Bind(typeof(StaticHandler));
         }
 
-        private void AcceptCallback(IAsyncResult ar)
+        private Task OnConnection(SocketConnection connection)
         {
-            try
-            {
-                var tcpClient = _listener.EndAcceptTcpClient(ar);
-                tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-
-                IClient client = AttachClient("1.2.3.4", tcpClient.GetStream());
-                ClientConnected.Set();
-                _listener.BeginAcceptTcpClient(AcceptCallback, this);
-            }
-            catch (ObjectDisposedException)
-            {
-                // NOP (we closed the socket)
-            }
+            IClient client = AttachClient("1.2.3.4", connection);
+            ClientConnected.Set();
+            return _tcs.Task;
         }
 
         public override void Dispose()
@@ -47,7 +38,7 @@ namespace Tests
             base.Dispose();
         }
 
-        internal class StaticHandler
+        internal static class StaticHandler
         {
             public static TestResponseData TestResponse(int n = 0, string s = "")
             {

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.IO.Pipelines;
 using System.Text;
 using FluentAssertions;
 using FluentAssertions.Json;
@@ -15,6 +16,7 @@ namespace Tests
     public class InvokeInstance
     {
         readonly Func<IClient, RentedBuffer, bool> _process = (client, data) => false;
+        readonly IDuplexPipe _fakePipe = new StreamDuplexPipe(PipeOptions.Default, new MemoryStream());
 
         [Fact]
         public void Call_GivenTypesArgs()
@@ -23,7 +25,7 @@ namespace Tests
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", _fakePipe, _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response<object>)o);
 
             server.Bind(handler);
@@ -41,7 +43,7 @@ namespace Tests
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", _fakePipe, _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response<object>)o);
 
             var reqOring = new Request() { Id = 1, Method = "FirstTest", Params = new object[] { 1, "string", false, null } };
@@ -63,7 +65,7 @@ namespace Tests
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", _fakePipe, _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response)o);
 
             var reqOring = new Request() { Id = 81, Method = "ByteTest", Params = new object[] { 99 } };
@@ -85,7 +87,7 @@ namespace Tests
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", _fakePipe, _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response)o);
 
             server.Bind(handler);
@@ -103,7 +105,7 @@ namespace Tests
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", _fakePipe, _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response<object>)o);
 
             var reqOring = new Request() { Id = 81, Method = "UIntTest", Params = new object[] { uint.MaxValue } };
@@ -126,7 +128,7 @@ namespace Tests
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", _fakePipe, _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response)o);
 
             var now = DateTime.Now;
@@ -149,7 +151,7 @@ namespace Tests
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", _fakePipe, _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response)o);
 
             var reqOring = new Request() { Id = 81, Method = "TimeSpanTest", Params = new object[] { TimeSpan.FromHours(4) } };
@@ -171,7 +173,7 @@ namespace Tests
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", _fakePipe, _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response<object>)o);
 
             var reqOring = new Request() { Id = 3, Method = "StringArrayTest", Params = new object[] { new string[] { "one", "two", "tree", "four" } } };
@@ -194,7 +196,7 @@ namespace Tests
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", _fakePipe, _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response<object>)o);
 
             var reqOring = new Request() { Id = 3, Method = "ReturnPrimitiveArray" };
@@ -217,7 +219,7 @@ namespace Tests
 
             var handler = new TestHandlerFake();
             var server = new JsonRpcServer();
-            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", new MemoryStream(), _process, Encoding.UTF8);
+            var clientMock = new Mock<JsonRpcServer.ClientConnection>(1, "localhost", _fakePipe, _process, Encoding.UTF8);
             clientMock.Setup(x => x.WriteAsJson(It.IsAny<object>())).Callback<object>(o => reply = (Response<object>)o);
 
             var reqOring = new Request() { Id = 3, Method = "ReturnStringArray" };

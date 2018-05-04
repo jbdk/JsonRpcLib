@@ -9,7 +9,7 @@ namespace JsonRpcLib
         private readonly int _length;
 
         public bool IsEmpty => _memory == null;
-        public Span<byte> Span => _memory.Memory.Span.Slice(0, _length);
+        public Span<byte> Span => ( _memory != null) ? _memory.Memory.Span.Slice(0, _length) : Span<byte>.Empty;
 
         public RentedBuffer(IMemoryOwner<byte> memory, int length)
         {

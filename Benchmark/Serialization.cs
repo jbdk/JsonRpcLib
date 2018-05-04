@@ -33,7 +33,7 @@ namespace Benchmark
         static Serialization()
         {
             Server = new MyServer(PORT);
-            Server.Bind<Handlers>();
+            Server.Bind(typeof(Handlers));
         }
 
         [GlobalSetup]

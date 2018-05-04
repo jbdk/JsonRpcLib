@@ -32,15 +32,15 @@ namespace JsonRpcLib
                 var result = await _reader.ReadAsync();
                 var input = result.Buffer;
 
+                if (result.IsCompleted && result.Buffer.IsEmpty)
+                {
+                    // No more data
+                    ConnectionClosed?.Invoke();
+                    break;
+                }
+
                 try
                 {
-                    if (result.IsCompleted && result.Buffer.IsEmpty)
-                    {
-                        // No more data
-                        ConnectionClosed?.Invoke();
-                        break;
-                    }
-
                     // Extract each line from the input
                     while (input.TrySliceTo((byte)'\n', out var slice, out var cursor))
                     {
