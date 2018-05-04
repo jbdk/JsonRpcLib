@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Buffers;
 using System.Diagnostics;
-using System.IO;
+using System.IO.Pipelines;
 using System.Text;
+using System.Threading.Tasks;
 using Utf8Json;
 
 namespace JsonRpcLib.Server
@@ -15,21 +16,21 @@ namespace JsonRpcLib.Server
             public bool IsConnected { get; private set; }
             public string Address { get; }
 
-            private readonly Stream _stream;
+            private readonly IDuplexPipe _duplexPipe;
             private readonly Func<ClientConnection, RentedBuffer, bool> _process;
             private readonly ArrayPool<byte> _pool = ArrayPool<byte>.Shared;
             private readonly AsyncLineReader _lineReader;
             private readonly Encoding _encoding;
 
-            public ClientConnection(int id, string address, Stream stream, Func<ClientConnection, RentedBuffer, bool> process, Encoding encoding)
+            public ClientConnection(int id, string address, IDuplexPipe duplexPipe, Func<ClientConnection, RentedBuffer, bool> process, Encoding encoding)
             {
                 _encoding = encoding ?? throw new ArgumentNullException(nameof(encoding));
                 Id = id;
                 Address = address;
-                _stream = stream ?? throw new ArgumentNullException(nameof(stream));
+                _duplexPipe = duplexPipe ?? throw new ArgumentNullException(nameof(duplexPipe));
                 _process = process ?? throw new ArgumentNullException(nameof(process));
                 IsConnected = true;
-                _lineReader = new AsyncLineReader(_stream, ProcessReceivedMessage) {
+                _lineReader = new AsyncLineReader(_duplexPipe.Input, ProcessReceivedMessage) {
                     ConnectionClosed = ConnectionClosed
                 };
             }
@@ -50,7 +51,7 @@ namespace JsonRpcLib.Server
                 }
                 finally
                 {
-                    buffer.Return();
+                    buffer.Dispose();
                 }
             }
 
@@ -62,8 +63,8 @@ namespace JsonRpcLib.Server
                 {
                     var bytes = _encoding.GetBytes(data, buffer);
                     buffer[bytes++] = (byte)'\n';
-                    _stream.Write(buffer, 0, bytes);
-                    _stream.Flush();
+                    _duplexPipe.Output.Write(buffer.AsSpan(0, bytes));
+                    _duplexPipe.Output.FlushAsync();
                     return true;
                 }
                 catch (Exception ex)
@@ -85,8 +86,8 @@ namespace JsonRpcLib.Server
                 Span<byte> buffer = stackalloc byte[len + 1];
                 arraySegment.AsSpan().CopyTo(buffer);
                 buffer[len++] = (byte)'\n';
-                _stream.Write(buffer);
-                _stream.Flush();
+                _duplexPipe.Output.Write(buffer);
+                _duplexPipe.Output.FlushAsync();
             }
 
             public void Dispose()
@@ -100,7 +101,7 @@ namespace JsonRpcLib.Server
                 if (!IsConnected)
                     return;
 
-                _stream.Dispose();
+                ((IDisposable)_duplexPipe)?.Dispose();
                 IsConnected = false;
                 _process(this, default);
             }

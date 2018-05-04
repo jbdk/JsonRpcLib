@@ -13,6 +13,7 @@ namespace JsonRpcLib.Server
         {
             public object Instance { get; internal set; }
             public MethodInfo Method { get; internal set; }
+            public ParameterInfo[] Parameters { get; internal set; }
             public Delegate Call { get; internal set; }
         }
 
@@ -29,12 +30,11 @@ namespace JsonRpcLib.Server
                 RegisterMethod(handler.GetType().Name, prefix, m, handler);
         }
 
-        public void Bind<T>(string prefix = "")
+        public void Bind(Type type, string prefix = "")
         {
             if (prefix.Any(c => char.IsWhiteSpace(c)))
                 throw new ArgumentException("Prefix string can not contain any whitespace");
 
-            var type = typeof(T);
             foreach (var m in type.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.Public))
                 RegisterMethod(type.Name, prefix, m);
         }
@@ -48,6 +48,7 @@ namespace JsonRpcLib.Server
             var info = new HandlerInfo {
                 Instance = instance,
                 Method = m,
+                Parameters = m.GetParameters(),
                 Call = instance != null ? Reflection.CreateDelegate(instance, m) : Reflection.CreateDelegate(m)
             };
             _handlers.TryAdd(name, info);
@@ -67,6 +68,7 @@ namespace JsonRpcLib.Server
             var info = new HandlerInfo {
                 Instance = null,
                 Method = call.Method,
+                Parameters = call.Method.GetParameters(),
                 Call = call
             };
             _handlers.TryAdd(method, info);
@@ -82,7 +84,7 @@ namespace JsonRpcLib.Server
                     // Make sure arguments are correct for the function call
                     bool hasOptionalParameters = false;
                     if (args != null)
-                        PrepareArguments(info.Method, ref args, out hasOptionalParameters);
+                        PrepareArguments(info, ref args, out hasOptionalParameters);
 
                     // Now actually do the actual function call on the users class
                     object result = Invoke(args, info, hasOptionalParameters);
@@ -115,6 +117,7 @@ namespace JsonRpcLib.Server
         private static void SendError(IClient client, int id, string message)
         {
             var response = new Response() {
+                JsonRpc = "2.0",
                 Id = id,
                 Error = new Error() { Code = -1, Message = message }
             };
@@ -124,6 +127,7 @@ namespace JsonRpcLib.Server
         private static void SendUnknownMethodError(IClient client, int id, string method)
         {
             var response = new Response() {
+                JsonRpc = "2.0",
                 Id = id,
                 Error = new Error() { Code = -32601, Message = $"Unknown method '{method}'" }
             };
@@ -133,6 +137,7 @@ namespace JsonRpcLib.Server
         private static void SendResponse(IClient client, int id)
         {
             var response = new Response() {
+                JsonRpc = "2.0",
                 Id = id
             };
             client.WriteAsJson(response);
@@ -141,6 +146,7 @@ namespace JsonRpcLib.Server
         private static void SendResponse(IClient client, int id, object result)
         {
             var response = new Response<object>() {
+                JsonRpc = "2.0",
                 Id = id,
                 Result = result
             };
@@ -173,10 +179,15 @@ namespace JsonRpcLib.Server
             return result;
         }
 
-        private void PrepareArguments(MethodInfo method, ref object[] args, out bool hasOptionalParameters)
+        private void PrepareArguments(HandlerInfo info, ref object[] args, out bool hasOptionalParameters)
         {
+            if (info == null)
+                throw new ArgumentNullException(nameof(info));
+            if(info.Parameters == null)
+                throw new ArgumentException("info.Parameters can not be null");
+
             hasOptionalParameters = false;
-            var p = method.GetParameters();
+            var p = info.Parameters;
             int neededArgs = p.Count(x => !x.HasDefaultValue);
             if (neededArgs > args.Length)
                 throw new JsonRpcException($"Argument count mismatch (Expected at least {neededArgs}, but got only {args.Length}");
@@ -200,21 +211,17 @@ namespace JsonRpcLib.Server
                     // Convert string to TimeSpan
                     if (p[i].ParameterType == typeof(TimeSpan))
                         args[i] = TimeSpan.Parse((string)args[i]);
-                    // Convert string to TimeSpan
+                    // Convert string to DateTime
                     else if (p[i].ParameterType == typeof(DateTime))
                         args[i] = DateTime.Parse((string)args[i]);
+                    // Convert string to DateTimeOffset
                     else if (p[i].ParameterType == typeof(DateTimeOffset))
                         args[i] = DateTimeOffset.Parse((string)args[i]);
                 }
                 else if (at == typeof(List<object>))
                 {
-                    // Create a new array with the target element type and copy values over
                     var list = (List<object>)args[i];
-                    var et = p[i].ParameterType.GetElementType();
-                    var a = Array.CreateInstance(p[i].ParameterType.GetElementType(), list.Count);
-                    for (int j = 0; j < list.Count; j++)
-                        a.SetValue(list[j], j);
-                    args[i] = a;
+                    args[i] = MakeTypedArray(p[i].ParameterType.GetElementType(), list);
                 }
                 //else if (at == typeof(JArray))
                 //{
@@ -230,6 +237,20 @@ namespace JsonRpcLib.Server
                 args = args.Concat(Enumerable.Repeat(Type.Missing, p.Length - args.Length)).ToArray();
                 hasOptionalParameters = true;
             }
+        }
+
+        /// <summary>
+        /// Create a new array with the target element type and copy values over
+        /// </summary> 
+        private static Array MakeTypedArray(Type elementType, List<object> list)
+        {
+            if (list == null)
+                return null;
+
+            var a = Array.CreateInstance(elementType, list.Count);
+            for (int j = 0; j < list.Count; j++)
+                a.SetValue(list[j], j);
+            return a;
         }
     }
 }
