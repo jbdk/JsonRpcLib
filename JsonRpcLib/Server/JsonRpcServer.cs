@@ -59,7 +59,7 @@ namespace JsonRpcLib.Server
 
             try
             {
-                var request = Serializer.Deserialize<Request>(buffer.Span);
+                var request = SpanJson.JsonSerializer.Generic.Utf8.Deserialize<Request>(buffer.Span);
                 ExecuteHandler(client, request.Id, request.Method, request.Params);
             }
             catch (Exception ex)
