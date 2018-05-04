@@ -30,12 +30,11 @@ namespace JsonRpcLib.Server
                 RegisterMethod(handler.GetType().Name, prefix, m, handler);
         }
 
-        public void Bind<T>(string prefix = "")
+        public void Bind(Type type, string prefix = "")
         {
             if (prefix.Any(c => char.IsWhiteSpace(c)))
                 throw new ArgumentException("Prefix string can not contain any whitespace");
 
-            var type = typeof(T);
             foreach (var m in type.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.Public))
                 RegisterMethod(type.Name, prefix, m);
         }
@@ -206,21 +205,17 @@ namespace JsonRpcLib.Server
                     // Convert string to TimeSpan
                     if (p[i].ParameterType == typeof(TimeSpan))
                         args[i] = TimeSpan.Parse((string)args[i]);
-                    // Convert string to TimeSpan
+                    // Convert string to DateTime
                     else if (p[i].ParameterType == typeof(DateTime))
                         args[i] = DateTime.Parse((string)args[i]);
+                    // Convert string to DateTimeOffset
                     else if (p[i].ParameterType == typeof(DateTimeOffset))
                         args[i] = DateTimeOffset.Parse((string)args[i]);
                 }
                 else if (at == typeof(List<object>))
                 {
-                    // Create a new array with the target element type and copy values over
                     var list = (List<object>)args[i];
-                    var et = p[i].ParameterType.GetElementType();
-                    var a = Array.CreateInstance(p[i].ParameterType.GetElementType(), list.Count);
-                    for (int j = 0; j < list.Count; j++)
-                        a.SetValue(list[j], j);
-                    args[i] = a;
+                    args[i] = MakeTypedArray(p[i].ParameterType.GetElementType(), list);
                 }
                 //else if (at == typeof(JArray))
                 //{
@@ -236,6 +231,20 @@ namespace JsonRpcLib.Server
                 args = args.Concat(Enumerable.Repeat(Type.Missing, p.Length - args.Length)).ToArray();
                 hasOptionalParameters = true;
             }
+        }
+
+        /// <summary>
+        /// Create a new array with the target element type and copy values over
+        /// </summary> 
+        private static Array MakeTypedArray(Type elementType, List<object> list)
+        {
+            if (list == null)
+                return null;
+
+            var a = Array.CreateInstance(elementType, list.Count);
+            for (int j = 0; j < list.Count; j++)
+                a.SetValue(list[j], j);
+            return a;
         }
     }
 }
