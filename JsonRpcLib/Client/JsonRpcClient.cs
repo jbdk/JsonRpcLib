@@ -111,7 +111,7 @@ namespace JsonRpcLib.Client
                     throw new TimeoutException();
                 try
                 {
-                    var response = SpanJson.JsonSerializer.Generic.Utf8.Deserialize<Response<T>>(data.Span);
+                    var response = Serializer.Deserialize<Response<T>>(data.Span);
                     if (response.Id == request.Id)
                     {
                         return response;
@@ -145,10 +145,10 @@ namespace JsonRpcLib.Client
         private void Send<T>(T value, bool flush = true)
         {
 #if true
-            var serialized = SpanJson.JsonSerializer.Generic.Utf8.Serialize<T>(value);
-            var len = serialized.Length;
+            var arraySegment = JsonSerializer.SerializeUnsafe(value, Serializer.Resolver);
+            var len = arraySegment.Count;
             Span<byte> buffer = stackalloc byte[len + 1];
-            serialized.CopyTo(buffer);
+            arraySegment.AsSpan().CopyTo(buffer);
             buffer[len++] = (byte)'\n';
             _duplexPipe.Output.Write(buffer);
             var w = _duplexPipe.Output.FlushAsync();

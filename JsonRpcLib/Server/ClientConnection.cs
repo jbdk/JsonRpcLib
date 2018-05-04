@@ -81,10 +81,10 @@ namespace JsonRpcLib.Server
 
             virtual public void WriteAsJson(object value)
             {
-                var serialized = SpanJson.JsonSerializer.Generic.Utf8.Serialize(value);
-                var len = serialized.Length;
+                var arraySegment = JsonSerializer.SerializeUnsafe(value, Serializer.Resolver);
+                var len = arraySegment.Count;
                 Span<byte> buffer = stackalloc byte[len + 1];
-                serialized.CopyTo(buffer);
+                arraySegment.AsSpan().CopyTo(buffer);
                 buffer[len++] = (byte)'\n';
                 _duplexPipe.Output.Write(buffer);
                 _duplexPipe.Output.FlushAsync();
