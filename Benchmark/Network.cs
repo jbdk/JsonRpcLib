@@ -73,7 +73,9 @@ namespace Benchmark
                 await _pipeClient.Output.WriteAsync(_request);
                 await _pipeClient.Output.FlushAsync();
                 var result = await pendingRead;
-                Debug.Assert(result.Buffer.Length == _request.Length);
+                if (result.Buffer.Length != _request.Length)
+                    Console.WriteLine("Pipe response invalid!");
+
                 _pipeClient.Input.AdvanceTo(result.Buffer.End);
             }
         }

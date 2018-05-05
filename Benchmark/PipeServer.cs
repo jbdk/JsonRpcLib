@@ -8,6 +8,7 @@ namespace Benchmark
     public class PipeServer : IDisposable
     {
         SocketListener _listener;
+        TaskCompletionSource<int> _tcs = new TaskCompletionSource<int>();
 
         public PipeServer(int port)
         {
@@ -29,11 +30,12 @@ namespace Benchmark
                     arg.Input.AdvanceTo(result.Buffer.End);
                 }
             });
-            return Task.CompletedTask;
+            return _tcs.Task;
         }
 
         public void Dispose()
         {
+            _tcs.TrySetCanceled();
             _listener?.Dispose();
         }
     }

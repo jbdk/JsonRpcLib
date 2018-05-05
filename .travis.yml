@@ -3,7 +3,7 @@ dist: trusty
 mono: none
 dotnet: 2.1.300-preview2-008533
 install:
-- dotnet restore --configfile NuGet.Config
+- dotnet restore -v n -f --configfile NuGet.config
 script:
 - dotnet build -c Release
 - dotnet test --no-build Tests/Tests.csproj -c Release
