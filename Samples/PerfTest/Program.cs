@@ -1,5 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO.Pipelines.Networking.Sockets;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using JsonRpcLib.Client;
@@ -34,11 +38,13 @@ namespace PerfTest
                 }
 
                 Console.WriteLine($"Warmup");
+                RunLatencyTest(true).Wait();
                 RunNotifyTest(threadCount, threadCount*100, clients, true);
                 RunInvokeTest(threadCount, threadCount*10, clients, true);
 
 
                 Console.WriteLine($"Running the tests...\n");
+                RunLatencyTest().Wait();
                 RunNotifyTest(threadCount, testCount, clients);
                 RunInvokeTest(threadCount, testCount / 10, clients);
             }
@@ -111,6 +117,93 @@ namespace PerfTest
                 //Interlocked.Increment(ref Target.Counter);
             }
         }
+
+#if true
+        private static async Task RunLatencyTest(bool isWarmup = false)
+        {
+            int testCount = (isWarmup) ? 10 : 100_000;
+            if (!isWarmup)
+                Console.WriteLine($"Running 1 connection latency test ({testCount} iterations");
+            const int port = 15435;
+            byte[] buffer = Encoding.UTF8.GetBytes("SOME TEST DATA!\n");
+
+            using (var server = new SimpleTcpServer(port))
+            {
+                using (var client = await SocketConnection.ConnectAsync(new IPEndPoint(IPAddress.Loopback, port)))
+                {
+                    var sw = Stopwatch.StartNew();
+
+                    for (int i = 0; i < testCount; i++)
+                    {
+                        await client.Output.WriteAsync(buffer);
+                        await client.Output.FlushAsync();
+
+                        var result = await client.Input.ReadAsync();
+                        if (result.Buffer.Length != buffer.Length)
+                        {
+                            Console.WriteLine("LatencyTest for wrong response!");
+                            break;
+                        }
+                        client.Input.AdvanceTo(result.Buffer.End);
+
+                        if(!isWarmup && i>2000 && i%2000 == 0)
+                        {
+                            var t = sw.ElapsedMilliseconds;
+                            Console.Write("  {1} r/s ({0}ms elapsed)    \r", t, (int)( (double)(i+1) / ( (double)t / 1000 ) ));
+                        }
+                    }
+
+                    var t1 = sw.ElapsedMilliseconds;
+                    if (!isWarmup)
+                        Console.WriteLine("  {1} r/s ({0}ms elapsed)     ", t1, (int)( (double)testCount / ( (double)t1 / 1000 ) ));
+                }
+            }
+        }
+
+#else
+        private static async Task RunLatencyTest2(bool isWarmup = false)
+        {
+            int testCount = ( isWarmup ) ? 10 : 100_000;
+            if (!isWarmup)
+                Console.WriteLine($"Running 1 connection latency test ({testCount} iterations");
+            const int port = 15435;
+            byte[] buffer = Encoding.UTF8.GetBytes("SOME TEST DATA!\n");
+            ArraySegment<byte> receive = new ArraySegment<byte>(new byte[100]);
+
+            using (var server = new SimpleTcpServer(port))
+            {
+                using (var client = new TcpClient("127.0.0.1", port))
+                {
+                    client.Client.NoDelay = true;
+
+                    var sw = Stopwatch.StartNew();
+
+                    for (int i = 0; i < testCount; i++)
+                    {
+                        await client.Client.SendAsync(buffer, SocketFlags.None);
+
+                        int len = await client.Client.ReceiveAsync(receive, SocketFlags.None);
+                        if (len != buffer.Length)
+                        {
+                            Console.WriteLine("LatencyTest for wrong response!");
+                            break;
+                        }
+
+                        if (!isWarmup && i > 2000 && i % 2000 == 0)
+                        {
+                            var t = sw.ElapsedMilliseconds;
+                            Console.Write("  {1} r/s ({0}ms elapsed)    \r", t, (int)( (double)( i + 1 ) / ( (double)t / 1000 ) ));
+                        }
+                    }
+
+                    var t1 = sw.ElapsedMilliseconds;
+                    if (!isWarmup)
+                        Console.WriteLine("  {1} r/s ({0}ms elapsed)     ", t1, (int)( (double)testCount / ( (double)t1 / 1000 ) ));
+                }
+            }
+        }
+#endif
+
     }
 
     static class Target

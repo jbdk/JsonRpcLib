@@ -13,17 +13,18 @@ namespace PerfTest
 
         public static async Task<JsonRpcClient> ConnectAsync(int port)
         {
-            //var client = new TcpClient();
-            //await client.ConnectAsync("127.0.0.1", port);
-            //return new JsonRpcClient(new StreamDuplexPipe(PipeOptions.Default, client.GetStream())) {
-            //    Timeout = Debugger.IsAttached ? TimeSpan.FromHours(1) : TimeSpan.FromSeconds(1)
-            //};
-
+#if false
+            var client = new TcpClient();
+            await client.ConnectAsync("127.0.0.1", port);
+            return new JsonRpcClient(new StreamDuplexPipe(PipeOptions.Default, client.GetStream())) {
+                Timeout = Debugger.IsAttached ? TimeSpan.FromHours(1) : TimeSpan.FromSeconds(1)
+            };
+#else
             var c = await SocketConnection.ConnectAsync(new IPEndPoint(IPAddress.Loopback, port));
             return new JsonRpcClient(c) {
                 Timeout = Debugger.IsAttached ? TimeSpan.FromHours(1) : TimeSpan.FromSeconds(1)
             };
+#endif
         }
     }
 }
-
