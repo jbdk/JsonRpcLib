@@ -3,8 +3,6 @@ using System.Buffers;
 using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Text;
-using System.Threading.Tasks;
-using Utf8Json;
 
 namespace JsonRpcLib.Server
 {
@@ -81,10 +79,10 @@ namespace JsonRpcLib.Server
 
             virtual public void WriteAsJson(object value)
             {
-                var arraySegment = JsonSerializer.SerializeUnsafe(value, Serializer.Resolver);
-                var len = arraySegment.Count;
+				var bytes = Serializer.Serialize(value);
+                var len = bytes.Length;
                 Span<byte> buffer = stackalloc byte[len + 1];
-                arraySegment.AsSpan().CopyTo(buffer);
+                bytes.AsSpan().CopyTo(buffer);
                 buffer[len++] = (byte)'\n';
                 _duplexPipe.Output.Write(buffer);
                 _duplexPipe.Output.FlushAsync();

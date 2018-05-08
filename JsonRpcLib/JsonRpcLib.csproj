@@ -5,7 +5,8 @@
     <PackageId>Bundgaard.JsonRpcLib</PackageId>
     <Authors>John Bundgaard</Authors>
     <Product>Bundgaard.JsonRpcLib</Product>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.0-preview</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -17,10 +18,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="SpanJson" Version="0.1.0-rc1-3" />
     <PackageReference Include="System.IO.Pipelines.Extensions" Version="0.1.0-preview2-180503-5" />
     <PackageReference Include="System.IO.Pipelines.Networking.Sockets" Version="0.1.0-preview2-180503-5" />
     <PackageReference Include="System.IO.Pipelines.Text.Primitives" Version="0.1.0-preview2-180503-5" />
-    <PackageReference Include="Utf8Json" Version="1.3.7" />
   </ItemGroup>
 
 

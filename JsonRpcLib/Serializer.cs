@@ -1,32 +1,35 @@
 ﻿using System;
 using System.IO;
-using Utf8Json;
-using Utf8Json.Resolvers;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using static SpanJson.JsonSerializer.Generic;
 
 namespace JsonRpcLib
 {
     internal static class Serializer
     {
-        public readonly static IJsonFormatterResolver Resolver = StandardResolver.AllowPrivateExcludeNull;
-
-        public static string Serialize<T>(T data) where T : new()
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static byte[] Serialize<T>(T input) where T : new()
         {
-            return JsonSerializer.ToJsonString<T>(data, Resolver);
+            return Utf8.Serialize<T>(input);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void Serialize<T>(Stream stream, T input)
+        {
+			Utf8.SerializeAsync<T>(input, stream).GetAwaiter().GetResult();
         }
 
-        public static void Serialize<T>(Stream stream, T data)
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static T Deserialize<T>(string json) where T : new()
         {
-            JsonSerializer.Serialize<T>(stream, data, Resolver);
+			return Utf8.Deserialize<T>(MemoryMarshal.AsBytes(json.AsSpan()));
         }
 
-        public static T Deserialize<T>(string json) where T : new()
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static T Deserialize<T>(Span<byte> span)
         {
-            return JsonSerializer.Deserialize<T>(json, Resolver);
-        }
-
-        public static T Deserialize<T>(Span<byte> span)
-        {
-            return JsonSerializer.Deserialize<T>(span.ToArray(), Resolver);
-        }
-    }
+			return Utf8.Deserialize<T>(span);
+		}
+	}
 }

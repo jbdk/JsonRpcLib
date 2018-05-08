@@ -22,7 +22,7 @@ namespace JsonRpcLib
         {
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
             _processLine = processLine ?? throw new ArgumentNullException(nameof(processLine));
-            _readerThread = Task.Factory.StartNew(ReaderThread, TaskCreationOptions.LongRunning);
+            _readerThread = Task.Factory.StartNew(ReaderThread);
         }
 
         private async Task ReaderThread()
@@ -49,6 +49,8 @@ namespace JsonRpcLib
                         int size = (int)slice.Length;
                         var block = _pool.Rent(size);
                         slice.CopyTo(block.Memory.Span);
+
+                        // ThreadPool.QueueUserWorkItem(a => _processLine(new RentedBuffer(block, size)));
 
                         try
                         {

@@ -51,14 +51,14 @@ namespace JsonRpcLib
         {
             if (!_semaphore.WaitOne(timeout))
             {
-                return default(T);
+                return default;
             }
 
             T firstNode;
 
             lock (_queue)
             {
-                if (_queue.Count == 0) return default(T);
+                if (_queue.Count == 0) return default;
                 firstNode = _queue[0];
                 _queue.RemoveAt(0);
             }
