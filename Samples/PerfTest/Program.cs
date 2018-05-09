@@ -31,7 +31,7 @@ namespace PerfTest
                 server.Bind(typeof(Target));    // Bind to functions on static class
 
                 Console.WriteLine($"Making {threadCount} client connections");
-                JsonRpcClient[] clients = new JsonRpcClient[threadCount];
+                var clients = new JsonRpcClient[threadCount];
                 for (int i = 0; i < threadCount; i++)
                 {
                     clients[i] = MyClient.ConnectAsync(port).Result;
@@ -83,7 +83,7 @@ namespace PerfTest
             if (!isWarmup)
                 Console.WriteLine($"{testCount} Invoke request to the server (static class handler, and no args)");
 
-            Task[] tasks = new Task[threadCount];
+            var tasks = new Task[threadCount];
             for (int i = 0; i < threadCount; i++)
             {
                 var client = clients[i];
@@ -121,7 +121,7 @@ namespace PerfTest
 #if true
         private static async Task RunLatencyTest(bool isWarmup = false)
         {
-            int testCount = (isWarmup) ? 10 : 100_000;
+            int testCount = (isWarmup) ? 10 : 20_000;
             if (!isWarmup)
                 Console.WriteLine($"Running 1 connection latency test ({testCount} iterations");
             const int port = 15435;

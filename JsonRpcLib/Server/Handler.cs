@@ -82,9 +82,7 @@ namespace JsonRpcLib.Server
                 try
                 {
                     // Make sure arguments are correct for the function call
-                    bool hasOptionalParameters = false;
-                    if (args != null)
-                        PrepareArguments(info, ref args, out hasOptionalParameters);
+                    PrepareArguments(info, ref args, out bool hasOptionalParameters);
 
                     // Now actually do the actual function call on the users class
                     object result = Invoke(args, info, hasOptionalParameters);
@@ -187,7 +185,10 @@ namespace JsonRpcLib.Server
                 throw new ArgumentException("info.Parameters can not be null");
 
             hasOptionalParameters = false;
-            var p = info.Parameters;
+			if (args == null)
+				return;
+
+			var p = info.Parameters;
             int neededArgs = p.Count(x => !x.HasDefaultValue);
             if (neededArgs > args.Length)
                 throw new JsonRpcException($"Argument count mismatch (Expected at least {neededArgs}, but got only {args.Length}");

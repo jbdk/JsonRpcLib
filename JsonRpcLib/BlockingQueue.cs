@@ -21,7 +21,7 @@ namespace JsonRpcLib
         /// Enqueues an item.
         /// </summary>
         /// <param name="item">An item.</param>
-        public void Enqueue(T item)
+        public void Enqueue(in T item)
         {
             lock (_queue)
             {
@@ -34,7 +34,7 @@ namespace JsonRpcLib
         /// Enqueues an item to the front of the queue.
         /// </summary>
         /// <param name="item">An item.</param>
-        public void EnqueueFront(T item)
+        public void EnqueueFront(in T item)
         {
             lock (_queue)
             {

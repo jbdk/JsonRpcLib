@@ -10,15 +10,17 @@ namespace JsonRpcLib
 {
     internal class AsyncLineReader : IDisposable
     {
-        private static readonly MemoryPool<byte> _pool = MemoryPool<byte>.Shared;
+		public delegate void ProcessLine(in RentedBuffer data);
+
+		private static readonly MemoryPool<byte> s_pool = MemoryPool<byte>.Shared;
 
         private readonly PipeReader _reader;
-        private readonly Action<RentedBuffer> _processLine;
+        private readonly ProcessLine _processLine;
         private readonly Task _readerThread;
 
         public Action ConnectionClosed { get; set; }
 
-        public AsyncLineReader(PipeReader reader, Action<RentedBuffer> processLine)
+        public AsyncLineReader(PipeReader reader, ProcessLine processLine)
         {
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
             _processLine = processLine ?? throw new ArgumentNullException(nameof(processLine));
@@ -47,14 +49,15 @@ namespace JsonRpcLib
                         input = input.Slice(cursor).Slice(1);
 
                         int size = (int)slice.Length;
-                        var block = _pool.Rent(size);
+                        var block = s_pool.Rent(size);
                         slice.CopyTo(block.Memory.Span);
 
                         // ThreadPool.QueueUserWorkItem(a => _processLine(new RentedBuffer(block, size)));
 
                         try
                         {
-                            _processLine(new RentedBuffer(block, size));
+							var data = new RentedBuffer(block, size);
+							_processLine(data);
                         }
                         catch (Exception ex)
                         {

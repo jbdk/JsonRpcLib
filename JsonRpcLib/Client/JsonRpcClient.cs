@@ -17,7 +17,6 @@ namespace JsonRpcLib.Client
         private bool _captureMode;
         private TimeSpan _timeout = TimeSpan.FromSeconds(5);
         private readonly IDuplexPipe _duplexPipe;
-        private readonly Encoding _encoding;
         private readonly AsyncLineReader _lineReader;
         private readonly BlockingQueue<RentedBuffer> _responseQueue = new BlockingQueue<RentedBuffer>();
 
@@ -32,16 +31,20 @@ namespace JsonRpcLib.Client
             }
         }
 
-        public JsonRpcClient(IDuplexPipe duplexPipe, Encoding encoding = null)
+        public JsonRpcClient(IDuplexPipe duplexPipe)
         {
             _duplexPipe = duplexPipe ?? throw new ArgumentNullException(nameof(duplexPipe));
-            _encoding = encoding ?? Encoding.UTF8;
-            _lineReader = new AsyncLineReader(duplexPipe.Input, line => _responseQueue.Enqueue(line)) {
+            _lineReader = new AsyncLineReader(duplexPipe.Input, ProcessLine) {
                 ConnectionClosed = ConnectionClosed
             };
         }
 
-        public void Notify(string method, params object[] args)
+		private void ProcessLine(in RentedBuffer data)
+		{
+			_responseQueue.Enqueue(data);
+		}
+
+		public void Notify(string method, params object[] args)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(JsonRpcClient));
@@ -57,7 +60,7 @@ namespace JsonRpcLib.Client
             Send(request, false);
         }
 
-        public void Invoke(string method)
+        public void Invoke(string method, params object[] args)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(JsonRpcClient));
@@ -68,7 +71,8 @@ namespace JsonRpcLib.Client
                 JsonRpc = JSONRPC,
                 Id = Interlocked.Increment(ref _nextId),
                 Method = method,
-            };
+				Params = args.Length == 0 ? null : args
+			};
 
             var response = InvokeHelper<object>(request);   // Just ignore result object
             if (response.Error != null)
@@ -100,7 +104,7 @@ namespace JsonRpcLib.Client
             return response.Result;
         }
 
-        private Response<T> InvokeHelper<T>(Request request)
+        private Response<T> InvokeHelper<T>(in Request request)
         {
             Send(request);
             while (true)
@@ -136,7 +140,7 @@ namespace JsonRpcLib.Client
         {
         }
 
-        private void Send<T>(T value, bool flush = true) where T : new()
+        private void Send<T>(in T value, bool flush = true) where T : new()
         {
 #if true
 			var butes = Serializer.Serialize<T>(value);

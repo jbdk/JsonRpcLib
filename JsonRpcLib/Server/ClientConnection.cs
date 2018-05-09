@@ -10,17 +10,19 @@ namespace JsonRpcLib.Server
     {
         internal class ClientConnection : IClient
         {
+			public delegate bool ProcessMesage(ClientConnection client, in RentedBuffer data);
+
             public int Id { get; }
             public bool IsConnected { get; private set; }
             public string Address { get; }
 
             private readonly IDuplexPipe _duplexPipe;
-            private readonly Func<ClientConnection, RentedBuffer, bool> _process;
+            private readonly ProcessMesage _process;
             private readonly ArrayPool<byte> _pool = ArrayPool<byte>.Shared;
             private readonly AsyncLineReader _lineReader;
             private readonly Encoding _encoding;
 
-            public ClientConnection(int id, string address, IDuplexPipe duplexPipe, Func<ClientConnection, RentedBuffer, bool> process, Encoding encoding)
+            public ClientConnection(int id, string address, IDuplexPipe duplexPipe, ProcessMesage process, Encoding encoding)
             {
                 _encoding = encoding ?? throw new ArgumentNullException(nameof(encoding));
                 Id = id;
@@ -38,7 +40,7 @@ namespace JsonRpcLib.Server
                 KillConnection();
             }
 
-            private void ProcessReceivedMessage(RentedBuffer buffer)
+            private void ProcessReceivedMessage(in RentedBuffer buffer)
             {
                 try
                 {
