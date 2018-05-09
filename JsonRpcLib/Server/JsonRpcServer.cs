@@ -44,7 +44,7 @@ namespace JsonRpcLib.Server
             return client;
         }
 
-        private bool ProcessClientMessage(IClient client, RentedBuffer buffer)
+        private bool ProcessClientMessage(IClient client, in RentedBuffer buffer)
         {
             if (buffer.IsEmpty)
             {

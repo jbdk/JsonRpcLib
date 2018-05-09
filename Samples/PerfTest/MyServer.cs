@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO.Pipelines.Networking.Sockets;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -9,7 +10,7 @@ using JsonRpcLib.Server;
 
 namespace PerfTest
 {
-    public class MyServer : JsonRpcServer
+	public class MyServer : JsonRpcServer
     {
         readonly SocketListener _listener;
         public ManualResetEventSlim ClientConnected { get; } = new ManualResetEventSlim();
@@ -18,13 +19,13 @@ namespace PerfTest
         public MyServer(int port)
         {
             _listener = new SocketListener();
-            _listener.Start(new IPEndPoint(IPAddress.Loopback, port));
+            _listener.Start(new IPEndPoint(IPAddress.Any, port));
             _listener.OnConnection(OnConnection);
         }
 
         private Task OnConnection(SocketConnection connection)
         {
-            IClient client = AttachClient("1.2.3.4", connection);
+            IClient client = AttachClient(connection.GetRemoteIp(), connection);
             ClientConnected.Set();
             return _tcs.Task;
         }
