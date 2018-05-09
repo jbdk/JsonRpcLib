@@ -10,7 +10,7 @@ using JsonRpcLib.Client;
 
 namespace PerfTest
 {
-    static class Program
+	static class Program
     {
         private const int UPDATE_DELAY_IN_MS = 100;
 
@@ -39,8 +39,8 @@ namespace PerfTest
 
                 Console.WriteLine($"Warmup");
                 RunLatencyTest(true).Wait();
-                RunNotifyTest(threadCount, threadCount*100, clients, true);
-                RunInvokeTest(threadCount, threadCount*10, clients, true);
+                RunNotifyTest(threadCount, threadCount*10000, clients, true);
+                RunInvokeTest(threadCount, threadCount*1000, clients, true);
 
 
                 Console.WriteLine($"Running the tests...\n");
@@ -61,7 +61,7 @@ namespace PerfTest
             for (int i = 0; i < threadCount; i++)
             {
                 var client = clients[i];
-                Task.Factory.StartNew(() => NotifyTest(client, testCount / threadCount));
+                Task.Factory.StartNew(() => NotifyTest(client, testCount / threadCount), TaskCreationOptions.LongRunning);
             }
 
             while (!completed.Wait(UPDATE_DELAY_IN_MS))
@@ -114,7 +114,6 @@ namespace PerfTest
             for (int i = 0; i < testCount; i++)
             {
                 client.Invoke("SpeedNoArgs");
-                //Interlocked.Increment(ref Target.Counter);
             }
         }
 
@@ -204,26 +203,5 @@ namespace PerfTest
         }
 #endif
 
-    }
-
-    static class Target
-    {
-        static int _testCount;
-        static TaskCompletionSource<int> _completed = new TaskCompletionSource<int>();
-        public static int Counter;
-
-        public static Task PrepareNewTest(int count)
-        {
-            _testCount = count;
-            _completed = new TaskCompletionSource<int>();
-            Counter = 0;
-            return _completed.Task;
-        }
-
-        public static void SpeedNoArgs()
-        {
-            if (Interlocked.Increment(ref Counter) == _testCount)
-                _completed.SetResult(Counter);
-        }
     }
 }
