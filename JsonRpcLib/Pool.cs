@@ -33,8 +33,7 @@ namespace JsonRpcLib
             for (int i = 0; i < poolCount; i++)
             {
                 var item = _newItemMethod();
-                if (_resetItemMethod != null)
-                    _resetItemMethod(item);
+                _resetItemMethod?.Invoke(item);
                 _queue.Add(item);
             }
         }
@@ -49,24 +48,19 @@ namespace JsonRpcLib
             if (_queueIndex == 0)
             {
                 // Dispose if applicable
-                var disposable = item as IDisposable;
-                if (disposable != null)
+                if (item is IDisposable disposable)
                     disposable.Dispose();
                 return;
             }
 
-            if (_resetItemMethod != null)
-            {
-                _resetItemMethod(item);
-            }
+            _resetItemMethod?.Invoke(item);
 
             lock (_queue)
             {
                 if (_queueIndex == 0)
                 {
                     // Dispose if applicable
-                    var disposable = item as IDisposable;
-                    if (disposable != null)
+                    if (item is IDisposable disposable)
                         disposable.Dispose();
                     return;
                 }

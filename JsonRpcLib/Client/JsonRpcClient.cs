@@ -3,7 +3,6 @@ using System.Buffers;
 using System.IO.Pipelines;
 using System.Text;
 using System.Threading;
-using Utf8Json;
 
 // REF: http://www.jsonrpc.org/specification
 
@@ -37,7 +36,7 @@ namespace JsonRpcLib.Client
         {
             _duplexPipe = duplexPipe ?? throw new ArgumentNullException(nameof(duplexPipe));
             _encoding = encoding ?? Encoding.UTF8;
-            _lineReader = new AsyncLineReader(duplexPipe.Input, ProcessReceivedMessage) {
+            _lineReader = new AsyncLineReader(duplexPipe.Input, line => _responseQueue.Enqueue(line)) {
                 ConnectionClosed = ConnectionClosed
             };
         }
@@ -137,18 +136,13 @@ namespace JsonRpcLib.Client
         {
         }
 
-        private void ProcessReceivedMessage(RentedBuffer rented)
-        {
-            _responseQueue.Enqueue(rented);
-        }
-
-        private void Send<T>(T value, bool flush = true)
+        private void Send<T>(T value, bool flush = true) where T : new()
         {
 #if true
-            var arraySegment = JsonSerializer.SerializeUnsafe(value, Serializer.Resolver);
-            var len = arraySegment.Count;
+			var butes = Serializer.Serialize<T>(value);
+            var len = butes.Length;
             Span<byte> buffer = stackalloc byte[len + 1];
-            arraySegment.AsSpan().CopyTo(buffer);
+            butes.AsSpan().CopyTo(buffer);
             buffer[len++] = (byte)'\n';
             _duplexPipe.Output.Write(buffer);
             var w = _duplexPipe.Output.FlushAsync();

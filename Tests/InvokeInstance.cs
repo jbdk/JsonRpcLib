@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.IO.Pipelines;
+using System.Linq;
 using System.Text;
 using FluentAssertions;
 using FluentAssertions.Json;
