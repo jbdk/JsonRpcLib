@@ -3,12 +3,11 @@ using System.Buffers;
 using System.Diagnostics;
 using System.IO.Pipelines;
 using System.IO.Pipelines.Text.Primitives;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace JsonRpcLib
 {
-    internal class AsyncLineReader : IDisposable
+	internal class AsyncLineReader : IDisposable
     {
 		public delegate void ProcessLine(in RentedBuffer data);
 

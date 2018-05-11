@@ -1,20 +1,16 @@
 using System;
-using System.IO;
-using System.IO.Pipelines;
-using System.Linq;
 using System.Text;
 using FluentAssertions;
 using FluentAssertions.Json;
 using JsonRpcLib;
 using JsonRpcLib.Server;
 using Moq;
-using Newtonsoft.Json.Linq;
 using Tests.Fakes;
 using Xunit;
 
 namespace Tests
 {
-    public class InvokeInstance : Base
+	public class InvokeInstance : Base
     {
 		[Fact]
         public void Call_GivenTypesArgs()

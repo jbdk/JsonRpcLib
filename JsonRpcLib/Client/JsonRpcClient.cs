@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 
 namespace JsonRpcLib.Client
 {
-	public class JsonRpcClient : IDisposable
-    {
+	public class JsonRpcClient : IJsonRpcClient
+	{
         private const string JSONRPC = "2.0";
 
         private bool _disposed;

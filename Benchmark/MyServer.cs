@@ -1,7 +1,5 @@
-﻿using System;
-using System.IO.Pipelines.Networking.Sockets;
+﻿using System.IO.Pipelines.Networking.Sockets;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +7,7 @@ using JsonRpcLib.Server;
 
 namespace Benchmark
 {
-    public class MyServer : JsonRpcServer
+	public class MyServer : JsonRpcServer
     {
         readonly SocketListener _listener;
         public ManualResetEventSlim ClientConnected { get; } = new ManualResetEventSlim();

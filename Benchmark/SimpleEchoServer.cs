@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 using System.Threading.Tasks;
-using JsonRpcLib.Server;
 
 namespace Benchmark
 {
-    public class SimpleEchoServer : IDisposable
+	public class SimpleEchoServer : IDisposable
     {
         readonly TcpListener _listener;
 

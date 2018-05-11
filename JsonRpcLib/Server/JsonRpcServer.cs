@@ -2,10 +2,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
@@ -13,13 +11,13 @@ using System.Threading;
 
 namespace JsonRpcLib.Server
 {
-    public partial class JsonRpcServer : IDisposable
-    {
+	public partial class JsonRpcServer : IJsonRpcServer
+	{
         readonly private Encoding _encoding;
         private int _nextClientId;
         private bool _disposed;
         private readonly ConcurrentDictionary<int, IClient> _clients = new ConcurrentDictionary<int, IClient>();
-        public IList<IClient> Clients => _clients.Values.ToList<IClient>();
+        public IReadOnlyList<IClient> Clients => _clients.Values.ToList<IClient>();
         protected Action<IClient, RentedBuffer> IncommingMessageHook { get; set; }
 
         /// <summary>

@@ -1,9 +1,8 @@
-﻿using System;
-using BenchmarkDotNet.Running;
+﻿using BenchmarkDotNet.Running;
 
 namespace Benchmark
 {
-    class Program
+	class Program
     {
         static void Main(string[] args)
         {

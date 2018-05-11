@@ -1,19 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Security;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using BenchmarkDotNet.Attributes;
+﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Attributes.Jobs;
 using JsonRpcLib;
-using Utf8Json;
-using Utf8Json.Resolvers;
 
 namespace Benchmark
 {
-    public abstract class Handlers
+	public abstract class Handlers
     {
         public static void FunctionOne()
         {

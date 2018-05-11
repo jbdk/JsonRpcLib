@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.IO.Pipelines;
 using System.Text;
@@ -7,14 +6,11 @@ using FluentAssertions.Json;
 using JsonRpcLib;
 using JsonRpcLib.Server;
 using Moq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Tests.Fakes;
 using Xunit;
 
 namespace Tests
 {
-    public class InvokeStatic : Base
+	public class InvokeStatic : Base
     {
 		class StaticHandler
         {
