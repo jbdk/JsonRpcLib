@@ -7,6 +7,10 @@
     <Product>Bundgaard.JsonRpcLib</Product>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Version>1.0.0-preview</Version>
+    <PackageProjectUrl>https://github.com/jbdk/JsonRpcLib</PackageProjectUrl>
+    <Description>C# DotNetCore 2.1+ Client/Server Json RPC library 
+Using Span&lt;T&gt;, Memory&lt;T&gt; and IO pipelines</Description>
+    <PackageTags>JsonRpc</PackageTags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
