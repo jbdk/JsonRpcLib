@@ -1,9 +1,12 @@
 # JsonRpcLib
-##### C# DotNetCore 2.1+ Client/Server Json RPC library
-<i>Using Span&lt;T&gt;, Memory&lt;T&gt; and IO pipelines</i>
+C# DotNetCore 2.1+ Client/Server Json RPC library
+<br/>
+Using Span&lt;T&gt;, Memory&lt;T&gt; and IO pipelines
 
+[![NuGet version (Bundgaard.JsonRpcLib)](https://img.shields.io/nuget/v/Bundgaard.JsonRpcLib.svg)](https://www.nuget.org/packages/Bundgaard.JsonRpcLib/)
 [![license](https://img.shields.io/github/license/jbdk/JsonRpcLib.svg)](LICENSE.md)
 [![Build Status](https://travis-ci.org/jbdk/JsonRpcLib.svg?branch=master)](https://travis-ci.org/jbdk/JsonRpcLib)
+[![Build status](https://ci.appveyor.com/api/projects/status/526taqgoctsoa26a/branch/master?svg=true)](https://ci.appveyor.com/project/jbdk/jsonrpclib/branch/master)
 
 
 ### Current performance 
