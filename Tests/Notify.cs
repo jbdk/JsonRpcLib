@@ -1,24 +1,16 @@
-using System;
-using System.IO;
-using System.IO.Pipelines;
 using System.Text;
 using FluentAssertions;
 using FluentAssertions.Json;
-using JsonRpcLib;
 using JsonRpcLib.Server;
 using Moq;
-using Newtonsoft.Json.Linq;
 using Tests.Fakes;
 using Xunit;
 
 namespace Tests
 {
-    public class Notify
+	public class Notify : Base
     {
-        readonly Func<IClient, RentedBuffer, bool> _process = (client, data) => false;
-        readonly IDuplexPipe _fakePipe = new StreamDuplexPipe(PipeOptions.Default, new MemoryStream());
-
-        [Fact]
+		[Fact]
         public void NoReturnOnNotify()
         {
             string reply = null;

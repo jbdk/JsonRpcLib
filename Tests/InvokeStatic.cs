@@ -14,11 +14,9 @@ using Xunit;
 
 namespace Tests
 {
-    public class InvokeStatic
+    public class InvokeStatic : Base
     {
-        readonly Func<IClient, RentedBuffer, bool> _process = (client, data) => false;
-
-        class StaticHandler
+		class StaticHandler
         {
             public static void Function1()
             {

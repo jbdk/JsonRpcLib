@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Tests
 {
-    public class Connection
+    public class Connection : Base
     {
         static int _nextPort = 43556;
 
@@ -38,7 +38,7 @@ namespace Tests
             {
                 using (var client = new TestClient(port))
                 {
-                    var reply = client.Invoke<TestServer.TestResponseData>("TestResponse", 1, "abc");
+                    var reply = client.Invoke<TestServer.TestResponseData>("TestResponse", 1, "abc").Result;
 
                     reply.Should().NotBeNull();
                     reply.Number.Should().Be(432);
