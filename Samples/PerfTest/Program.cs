@@ -113,7 +113,7 @@ namespace PerfTest
         {
             for (int i = 0; i < testCount; i++)
             {
-                client.Invoke("SpeedNoArgs");
+                client.Invoke("SpeedNoArgs").Wait();
             }
         }
 

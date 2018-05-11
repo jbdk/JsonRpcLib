@@ -14,12 +14,9 @@ using Xunit;
 
 namespace Tests
 {
-    public class InvokeInstance
+    public class InvokeInstance : Base
     {
-        readonly Func<IClient, RentedBuffer, bool> _process = (client, data) => false;
-        readonly IDuplexPipe _fakePipe = new StreamDuplexPipe(PipeOptions.Default, new MemoryStream());
-
-        [Fact]
+		[Fact]
         public void Call_GivenTypesArgs()
         {
             Response<object> reply = default;

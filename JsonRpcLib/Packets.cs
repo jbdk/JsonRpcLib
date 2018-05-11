@@ -28,7 +28,15 @@ namespace JsonRpcLib
         public string Message { get; set; }
     }
 
-    [DataContract]
+	[DataContract]
+	internal struct ResponseIdOnly
+	{
+		[DataMember(Name = "id")]
+		public int? Id { get; set; }
+	}
+
+
+	[DataContract]
     internal struct Response
     {
         [DataMember(Name = "jsonrpc")]

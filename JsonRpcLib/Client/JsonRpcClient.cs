@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO.Pipelines;
-using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 // REF: http://www.jsonrpc.org/specification
 
 namespace JsonRpcLib.Client
 {
-    public class JsonRpcClient : IDisposable
+	public class JsonRpcClient : IDisposable
     {
         private const string JSONRPC = "2.0";
 
@@ -18,7 +20,8 @@ namespace JsonRpcLib.Client
         private TimeSpan _timeout = TimeSpan.FromSeconds(5);
         private readonly IDuplexPipe _duplexPipe;
         private readonly AsyncLineReader _lineReader;
-        private readonly BlockingQueue<RentedBuffer> _responseQueue = new BlockingQueue<RentedBuffer>();
+		private readonly ConcurrentDictionary<int, TaskCompletionSource<RentedBuffer>>
+			_pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<RentedBuffer>>();
 
         /// <summary>
         /// Get/Set read and write timeout 
@@ -41,7 +44,17 @@ namespace JsonRpcLib.Client
 
 		private void ProcessLine(in RentedBuffer data)
 		{
-			_responseQueue.Enqueue(data);
+			var response = Serializer.Deserialize<ResponseIdOnly>(data.Span);
+			if(_pendingRequests.TryRemove(response.Id.GetValueOrDefault(), out var tcs))
+			{
+				tcs.SetResult(data);
+			}
+			else
+			{
+				// No pending request for this response.
+				// Where did it come from ???
+				data.Dispose();
+			}
 		}
 
 		public void Notify(string method, params object[] args)
@@ -60,7 +73,7 @@ namespace JsonRpcLib.Client
             Send(request, false);
         }
 
-        public void Invoke(string method, params object[] args)
+        public async Task Invoke(string method, params object[] args)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(JsonRpcClient));
@@ -74,14 +87,14 @@ namespace JsonRpcLib.Client
 				Params = args.Length == 0 ? null : args
 			};
 
-            var response = InvokeHelper<object>(request);   // Just ignore result object
+            var response = await InvokeHelper<object>(request);   // Just ignore result object
             if (response.Error != null)
                 throw new JsonRpcException(response.Error.Value);
             if (response.Id != request.Id)
                 throw new JsonRpcException($"Request/response id mismatch. Expected {request.Id} but got {response.Id}");
         }
 
-        public T Invoke<T>(string method, params object[] args)
+        public async Task<T> Invoke<T>(string method, params object[] args)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(JsonRpcClient));
@@ -95,7 +108,7 @@ namespace JsonRpcLib.Client
                 Params = args.Length == 0 ? null : args
             };
 
-            var response = InvokeHelper<T>(request);
+            var response = await InvokeHelper<T>(request);
             if (response.Error != null)
                 throw new JsonRpcException(response.Error.Value);
             if (response.Id != request.Id)
@@ -104,32 +117,39 @@ namespace JsonRpcLib.Client
             return response.Result;
         }
 
-        private Response<T> InvokeHelper<T>(in Request request)
+        private async Task<Response<T>> InvokeHelper<T>(Request request)
         {
+			Debug.Assert(request.Id.HasValue);
+
+			var tcs = new TaskCompletionSource<RentedBuffer>();
+			_pendingRequests.TryAdd(request.Id.Value, tcs);
+
             Send(request);
+
+
             while (true)
             {
-                RentedBuffer data = _responseQueue.Dequeue((int)Timeout.TotalMilliseconds);
-                if (data.IsEmpty)
-                    throw new TimeoutException();
-                try
-                {
-                    var response = Serializer.Deserialize<Response<T>>(data.Span);
-                    if (response.Id == request.Id)
-                    {
-                        return response;
-                    }
-                    else
-                    {
-                        // Some other packet received.
-                        // Don't know what to do here yet !?!
-                    }
-                }
-                finally
-                {
-                    data.Dispose();
-                }
-            }
+				try
+				{
+					var data = await tcs.Task.OrTimeout(Timeout);
+
+					try
+					{
+						var response = Serializer.Deserialize<Response<T>>(data.Span);
+						Debug.Assert(response.Id == request.Id.Value);
+						return response;
+					}
+					finally
+					{
+						data.Dispose();
+					}
+
+				}
+				finally
+				{
+					_pendingRequests.TryRemove(request.Id.Value, out var _);
+				}
+			}
         }
 
         public void Flush()

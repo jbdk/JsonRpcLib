@@ -2,6 +2,7 @@
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using SpanJson.Formatters.Dynamic;
 using static SpanJson.JsonSerializer.Generic;
 
 namespace JsonRpcLib
@@ -30,6 +31,33 @@ namespace JsonRpcLib
 		public static T Deserialize<T>(Span<byte> span)
         {
 			return Utf8.Deserialize<T>(span);
+		}
+
+		public static bool ConvertToConcreteType(Type inputType, Type outputType, ref object value)
+		{
+			if(typeof(SpanJsonDynamic<byte>).IsAssignableFrom(inputType))
+			{
+				var v = (SpanJsonDynamic<byte>)value;
+				return v.TryConvert(outputType, out value);
+			}
+			else if (inputType == typeof(SpanJsonDynamicArray<byte>))
+			{
+				var nt = (SpanJsonDynamicArray<byte>)value;
+				var et = outputType.GetElementType();
+
+				var a = Array.CreateInstance(et, nt.Length);
+				int i = 0;
+				foreach (SpanJsonDynamic<byte> ev in nt)
+				{
+					if (!ev.TryConvert(et, out object v))
+						return false;
+					a.SetValue(v, i++);
+				}
+
+				value = a;
+				return true;
+			}
+			return false;
 		}
 	}
 }
