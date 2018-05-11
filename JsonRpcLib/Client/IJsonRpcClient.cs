@@ -9,8 +9,8 @@ namespace JsonRpcLib.Client
 
 		void EnterCaptureMode(string initiateMethod, Func<string, bool> handler);
 		void Flush();
-		Task Invoke(string method, params object[] args);
-		Task<T> Invoke<T>(string method, params object[] args);
+		Task InvokeAsync(string method, params object[] args);
+		Task<T> InvokeAsync<T>(string method, params object[] args);
 		void Notify(string method, params object[] args);
 	}
 }

@@ -91,8 +91,8 @@ Connect client to server and call the methods
 const int port = 7733;
 using(var client = MyClient.ConnectAsync(port).Result)
 {
-    var result = client.Invoke<int>("TestMethod");
-    client.Invoke("DelegateMethod", 44, 76);
+    var result = await client.InvokeAsync<int>("TestMethod");
+    await client.InvokeAsync("DelegateMethod", 44, 76);
 
     // Fire-and-forget 
     client.Notify("DelegateMethod", 2, 6);

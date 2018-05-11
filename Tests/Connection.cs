@@ -30,7 +30,7 @@ namespace Tests
             {
                 using (var client = new TestClient(port))
                 {
-                    var reply = client.Invoke<TestServer.TestResponseData>("TestResponse", 1, "abc").Result;
+                    var reply = client.InvokeAsync<TestServer.TestResponseData>("TestResponse", 1, "abc").Result;
 
                     reply.Should().NotBeNull();
                     reply.Number.Should().Be(432);

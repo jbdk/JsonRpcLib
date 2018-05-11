@@ -73,7 +73,7 @@ namespace JsonRpcLib.Client
             Send(request, false);
         }
 
-        public async Task Invoke(string method, params object[] args)
+        public async Task InvokeAsync(string method, params object[] args)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(JsonRpcClient));
@@ -94,7 +94,7 @@ namespace JsonRpcLib.Client
                 throw new JsonRpcException($"Request/response id mismatch. Expected {request.Id} but got {response.Id}");
         }
 
-        public async Task<T> Invoke<T>(string method, params object[] args)
+        public async Task<T> InvokeAsync<T>(string method, params object[] args)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(JsonRpcClient));

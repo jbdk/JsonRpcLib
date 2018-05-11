@@ -45,7 +45,7 @@ namespace Benchmark
         [Benchmark]
         public void Invoke_FunctionOne()
         {
-            Client.Invoke("FunctionOne");
+            Client.InvokeAsync("FunctionOne");
         }
 
         [Benchmark]
