@@ -14,7 +14,6 @@ namespace JsonRpcLib.Server
             public object Instance { get; internal set; }
             public MethodInfo Method { get; internal set; }
             public ParameterInfo[] Parameters { get; internal set; }
-            public Delegate Call { get; internal set; }
         }
 
         readonly ConcurrentDictionary<string, HandlerInfo> _handlers = new ConcurrentDictionary<string, HandlerInfo>();
@@ -48,8 +47,7 @@ namespace JsonRpcLib.Server
             var info = new HandlerInfo {
                 Instance = instance,
                 Method = m,
-                Parameters = m.GetParameters(),
-                Call = instance != null ? Reflection.CreateDelegate(instance, m) : Reflection.CreateDelegate(m)
+                Parameters = m.GetParameters()
             };
             _handlers.TryAdd(name, info);
             Debug.WriteLine($"Added handler for '{name}' on {className}.{m.Name}");
@@ -68,8 +66,7 @@ namespace JsonRpcLib.Server
             var info = new HandlerInfo {
                 Instance = null,
                 Method = call.Method,
-                Parameters = call.Method.GetParameters(),
-                Call = call
+                Parameters = call.Method.GetParameters()
             };
             _handlers.TryAdd(method, info);
             Debug.WriteLine($"Added handler for '{method}' on Delegate");
@@ -82,10 +79,10 @@ namespace JsonRpcLib.Server
                 try
                 {
                     // Make sure parameters are correct for the function call
-                    FixParameters(info, ref args, out bool hasOptionalParameters);
+                    FixParameters(info, ref args);
 
                     // Now actually do the actual function call on the users class
-                    object result = Invoke(args, info, hasOptionalParameters);
+                    object result = Invoke(args, info);
                     if (!id.HasValue)
                         return;     // Was a notify, so don't reply
 
@@ -151,40 +148,30 @@ namespace JsonRpcLib.Server
             client.WriteAsJson(response);
         }
 
-        private static object Invoke(object[] args, HandlerInfo info, bool hasOptionalParameters)
+        private static object Invoke(object[] args, HandlerInfo info)
         {
             object result = null;
-            if (hasOptionalParameters)
+            // Use reflection invoke instead of delegate because we have optional parameters
+            if (info.Instance != null)
             {
-                // Use reflection invoke instead of delegate because we have optional parameters
-                if (info.Instance != null)
-                {
-                    // Instance function
-                    result = info.Method.Invoke(info.Instance,
-                        BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod | BindingFlags.CreateInstance, null, args, null);
-                }
-                else
-                {
-                    // Static function
-                    result = info.Method.Invoke(null, BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod, null, args, null);
-                }
+                // Instance function
+                result = info.Method.Invoke(info.Instance,
+                    BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod | BindingFlags.CreateInstance, null, args, null);
             }
             else
             {
-                result = info.Call.DynamicInvoke(args);
+                // Static function
+                result = info.Method.Invoke(null, BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod, null, args, null);
             }
-
             return result;
         }
 
-        private void FixParameters(HandlerInfo info, ref object[] args, out bool hasOptionalParameters)
+        private void FixParameters(HandlerInfo info, ref object[] args)
         {
             if (info == null)
                 throw new ArgumentNullException(nameof(info));
             if(info.Parameters == null)
                 throw new ArgumentException("info.Parameters can not be null");
-
-            hasOptionalParameters = false;
 			if (args == null)
 				return;
 
@@ -242,7 +229,6 @@ namespace JsonRpcLib.Server
             {
                 // Missing optional arguments are set to Type.Missing
                 args = args.Concat(Enumerable.Repeat(Type.Missing, info.Parameters.Length - args.Length)).ToArray();
-                hasOptionalParameters = true;
             }
         }
 

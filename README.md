@@ -8,8 +8,8 @@
 
 ### Current performance 
 Run the PerfTest app
- - 8 threads 1,000,000 json notify -> static class call: `1,250,000 requests/sec`
- - 8 threads 100,000 json invoke -> static class call: `35,000 requests/sec` 
+ - 8 threads 1,000,000 json notify -> static class call: `~1,500,000 requests/sec`
+ - 8 threads 100,000 json invoke -> static class call: `~27,500 requests/sec` 
 
 Test machine: 3.4 Ghz i5 3570
 
