@@ -34,7 +34,6 @@ public class MyServer : JsonRpcServer
     private Task OnConnection(SocketConnection connection)
     {
         IClient client = AttachClient(connection.GetRemoteIp(), connection);
-        ClientConnected.Set();
         return _tcs.Task;
     }
 
@@ -112,7 +111,7 @@ public class MyClient
 Connect client to server and call the methods
 ````csharp
 const int port = 7733;
-using(var client = MyClient.ConnectAsync(port).Result)
+using(var client = await MyClient.ConnectAsync(port))
 {
     var result = await client.InvokeAsync<int>("TestMethod");
     await client.InvokeAsync("DelegateMethod", 44, 76);
