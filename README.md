@@ -65,7 +65,7 @@ static class Target
 {
     public static int TestMethod()
     {
-        Debug.WriteLine("Method1 called");
+        Debug.WriteLine("TestMethod called");
         return 42;
     }
 }
@@ -78,7 +78,8 @@ public static class SocketExtensions
     static readonly PropertyInfo s_socketProperty;
     static SocketExtensions()
     {
-        s_socketProperty = typeof(SocketConnection).GetProperty("Socket", BindingFlags.NonPublic | BindingFlags.Instance);
+        s_socketProperty = typeof(SocketConnection).GetProperty("Socket",
+            BindingFlags.NonPublic | BindingFlags.Instance);
     }
 
     public static string GetRemoteIp(this SocketConnection conn)
