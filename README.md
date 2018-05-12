@@ -71,6 +71,28 @@ static class Target
 }
 
 ````
+You need this little extension to get the clients IP address on the server
+````csharp
+public static class SocketExtensions
+{
+    static readonly PropertyInfo s_socketProperty;
+    static SocketExtensions()
+    {
+        s_socketProperty = typeof(SocketConnection).GetProperty("Socket", BindingFlags.NonPublic | BindingFlags.Instance);
+    }
+
+    public static string GetRemoteIp(this SocketConnection conn)
+    {
+        if (s_socketProperty?.GetValue(conn) is Socket socket)
+        {
+            var ipEP = socket.RemoteEndPoint as IPEndPoint;
+            return ipEP.Address.MapToIPv4().ToString();
+        }
+        return null;
+    }
+}
+````
+
 # The Client
 JsonRpc client using SocketConnection class (corefxlab)
 ````csharp
