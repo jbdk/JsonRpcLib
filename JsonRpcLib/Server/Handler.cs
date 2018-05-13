@@ -64,7 +64,7 @@ namespace JsonRpcLib.Server
                 throw new JsonRpcException($"The method '{method}' is already handled by the class {existing.Instance.GetType().Name}");
 
             var info = new HandlerInfo {
-                Instance = null,
+                Instance = call.Target,
                 Method = call.Method,
                 Parameters = call.Method.GetParameters()
             };

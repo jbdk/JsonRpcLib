@@ -21,7 +21,7 @@ namespace JsonRpcLib.Client
         private readonly IDuplexPipe _duplexPipe;
         private readonly AsyncLineReader _lineReader;
 		private readonly ConcurrentDictionary<int, TaskCompletionSource<RentedBuffer>>
-			_pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<RentedBuffer>>();
+		_pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<RentedBuffer>>();
 
         /// <summary>
         /// Get/Set read and write timeout 
