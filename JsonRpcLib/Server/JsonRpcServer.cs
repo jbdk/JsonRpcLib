@@ -87,7 +87,7 @@ namespace JsonRpcLib.Server
         {
             // Client connection closed or lost
             var result = _clients.TryRemove(client.Id, out var _);
-            Debug.Assert(result, "_clients.TryRemove() failed!");
+            // Debug.Assert(result, "_clients.TryRemove() failed!");
             Debug.WriteLine($"#{client.Id} JsonRpc client removed");
         }
 
