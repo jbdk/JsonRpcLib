@@ -8,9 +8,9 @@ using Xunit;
 
 namespace Tests
 {
-	public class Notify : Base
+    public class Notify : Base
     {
-		[Fact]
+        [Fact]
         public void NoReturnOnNotify()
         {
             string reply = null;

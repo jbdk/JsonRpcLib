@@ -4,7 +4,7 @@ using JsonRpcLib;
 
 namespace Benchmark
 {
-	public abstract class Handlers
+    public abstract class Handlers
     {
         public static void FunctionOne()
         {
@@ -45,7 +45,7 @@ namespace Benchmark
         [Benchmark]
         public void Invoke_FunctionOne()
         {
-            Client.InvokeAsync("FunctionOne");
+            Client.InvokeAsync("FunctionOne").Wait();
         }
 
         [Benchmark]

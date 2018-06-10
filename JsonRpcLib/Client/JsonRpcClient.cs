@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 
 namespace JsonRpcLib.Client
 {
-	public class JsonRpcClient : IJsonRpcClient
-	{
+    public class JsonRpcClient : IJsonRpcClient
+    {
         private const string JSONRPC = "2.0";
 
         private bool _disposed;
@@ -20,11 +20,12 @@ namespace JsonRpcLib.Client
         private TimeSpan _timeout = TimeSpan.FromSeconds(5);
         private readonly IDuplexPipe _duplexPipe;
         private readonly AsyncLineReader _lineReader;
-		private readonly ConcurrentDictionary<int, TaskCompletionSource<RentedBuffer>>
-		_pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<RentedBuffer>>();
+
+        private readonly ConcurrentDictionary<int, TaskCompletionSource<RentedBuffer>>
+            _pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<RentedBuffer>>();
 
         /// <summary>
-        /// Get/Set read and write timeout 
+        /// Get/Set read and write timeout
         /// </summary>
         public TimeSpan Timeout
         {
@@ -42,22 +43,22 @@ namespace JsonRpcLib.Client
             };
         }
 
-		private void ProcessLine(in RentedBuffer data)
-		{
-			var response = Serializer.Deserialize<ResponseIdOnly>(data.Span);
-			if(_pendingRequests.TryRemove(response.Id.GetValueOrDefault(), out var tcs))
-			{
-				tcs.SetResult(data);
-			}
-			else
-			{
-				// No pending request for this response.
-				// Where did it come from ???
-				data.Dispose();
-			}
-		}
+        private void ProcessLine(in RentedBuffer data)
+        {
+            var response = Serializer.Deserialize<ResponseIdOnly>(data.Span);
+            if(_pendingRequests.TryRemove(response.Id.GetValueOrDefault(), out var tcs))
+            {
+                tcs.SetResult(data);
+            }
+            else
+            {
+                // No pending request for this response.
+                // Where did it come from ???
+                data.Dispose();
+            }
+        }
 
-		public void Notify(string method, params object[] args)
+        public void Notify(string method, params object[] args)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(JsonRpcClient));
@@ -84,8 +85,8 @@ namespace JsonRpcLib.Client
                 JsonRpc = JSONRPC,
                 Id = Interlocked.Increment(ref _nextId),
                 Method = method,
-				Params = args.Length == 0 ? null : args
-			};
+                Params = args.Length == 0 ? null : args
+            };
 
             var response = await InvokeHelper<object>(request);   // Just ignore result object
             if (response.Error != null)
@@ -119,37 +120,35 @@ namespace JsonRpcLib.Client
 
         private async Task<Response<T>> InvokeHelper<T>(Request request)
         {
-			Debug.Assert(request.Id.HasValue);
+            Debug.Assert(request.Id.HasValue);
 
-			var tcs = new TaskCompletionSource<RentedBuffer>();
-			_pendingRequests.TryAdd(request.Id.Value, tcs);
+            var tcs = new TaskCompletionSource<RentedBuffer>();
+            _pendingRequests.TryAdd(request.Id.Value, tcs);
 
             Send(request);
 
-
             while (true)
             {
-				try
-				{
-					var data = await tcs.Task.OrTimeout(Timeout);
+                try
+                {
+                    var data = await tcs.Task.OrTimeout(Timeout);
 
-					try
-					{
-						var response = Serializer.Deserialize<Response<T>>(data.Span);
-						Debug.Assert(response.Id == request.Id.Value);
-						return response;
-					}
-					finally
-					{
-						data.Dispose();
-					}
-
-				}
-				finally
-				{
-					_pendingRequests.TryRemove(request.Id.Value, out var _);
-				}
-			}
+                    try
+                    {
+                        var response = Serializer.Deserialize<Response<T>>(data.Span);
+                        Debug.Assert(response.Id == request.Id.Value);
+                        return response;
+                    }
+                    finally
+                    {
+                        data.Dispose();
+                    }
+                }
+                finally
+                {
+                    _pendingRequests.TryRemove(request.Id.Value, out var _);
+                }
+            }
         }
 
         public void Flush()
@@ -163,7 +162,7 @@ namespace JsonRpcLib.Client
         private void Send<T>(in T value, bool flush = true) where T : new()
         {
 #if true
-			var butes = Serializer.Serialize<T>(value);
+            var butes = Serializer.Serialize<T>(value);
             var len = butes.Length;
             Span<byte> buffer = stackalloc byte[len + 1];
             butes.AsSpan().CopyTo(buffer);
@@ -185,7 +184,7 @@ namespace JsonRpcLib.Client
 
         /// <summary>
         /// Captures the raw json messages received from the server for the rest of the connection lifetime.
-        /// Calls the handler with each message for you to parse. These messages might not conform to json RPC, 
+        /// Calls the handler with each message for you to parse. These messages might not conform to json RPC,
         /// and are server specific!
         /// Return false from the handler to stop processing messages
         /// </summary>

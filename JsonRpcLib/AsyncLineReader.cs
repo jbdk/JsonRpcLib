@@ -3,15 +3,16 @@ using System.Buffers;
 using System.Diagnostics;
 using System.IO.Pipelines;
 using System.IO.Pipelines.Text.Primitives;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace JsonRpcLib
 {
-	internal class AsyncLineReader : IDisposable
+    internal class AsyncLineReader : IDisposable
     {
-		public delegate void ProcessLine(in RentedBuffer data);
+        public delegate void ProcessLine(in RentedBuffer data);
 
-		private static readonly MemoryPool<byte> s_pool = MemoryPool<byte>.Shared;
+        private static readonly MemoryPool<byte> s_pool = MemoryPool<byte>.Shared;
 
         private readonly PipeReader _reader;
         private readonly ProcessLine _processLine;
@@ -23,7 +24,7 @@ namespace JsonRpcLib
         {
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
             _processLine = processLine ?? throw new ArgumentNullException(nameof(processLine));
-            _readerThread = Task.Factory.StartNew(ReaderThread);
+            _readerThread = Task.Factory.StartNew(ReaderThread, TaskCreationOptions.LongRunning);
         }
 
         private async Task ReaderThread()
@@ -50,18 +51,18 @@ namespace JsonRpcLib
                         int size = (int)slice.Length;
                         var block = s_pool.Rent(size);
                         slice.CopyTo(block.Memory.Span);
-
-                        // ThreadPool.QueueUserWorkItem(a => _processLine(new RentedBuffer(block, size)));
-
+#if false
+                        ThreadPool.QueueUserWorkItem(_ => _processLine(new RentedBuffer(block, size)));
+#else
                         try
                         {
-							var data = new RentedBuffer(block, size);
-							_processLine(data);
+                            _processLine(new RentedBuffer(block, size));
                         }
                         catch (Exception ex)
                         {
                             Debug.WriteLine($"Error processing line \"{slice.GetUtf8Span()}\": {ex.Message}");
                         }
+#endif
                     }
                 }
                 finally
@@ -80,5 +81,4 @@ namespace JsonRpcLib
             GC.SuppressFinalize(this);
         }
     }
-
 }

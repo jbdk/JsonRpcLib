@@ -10,7 +10,7 @@ using BenchmarkDotNet.Attributes.Jobs;
 
 namespace Benchmark
 {
-	[CoreJob]
+    [CoreJob]
     [MemoryDiagnoser]
     public class ResponseTime
     {

@@ -11,8 +11,8 @@ using System.Threading;
 
 namespace JsonRpcLib.Server
 {
-	public partial class JsonRpcServer : IJsonRpcServer
-	{
+    public partial class JsonRpcServer : IJsonRpcServer
+    {
         readonly private Encoding _encoding;
         private int _nextClientId;
         private bool _disposed;

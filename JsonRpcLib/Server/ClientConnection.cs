@@ -10,7 +10,7 @@ namespace JsonRpcLib.Server
     {
         internal class ClientConnection : IClient
         {
-			public delegate bool ProcessMessage(ClientConnection client, in RentedBuffer data);
+            public delegate bool ProcessMessage(ClientConnection client, in RentedBuffer data);
 
             public int Id { get; }
             public bool IsConnected { get; private set; }
@@ -81,7 +81,7 @@ namespace JsonRpcLib.Server
 
             virtual public void WriteAsJson(object value)
             {
-				var bytes = Serializer.Serialize(value);
+                var bytes = Serializer.Serialize(value);
                 var len = bytes.Length;
                 Span<byte> buffer = stackalloc byte[len + 1];
                 bytes.AsSpan().CopyTo(buffer);

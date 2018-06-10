@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Benchmark
 {
-	public class SimpleEchoServer : IDisposable
+    public class SimpleEchoServer : IDisposable
     {
         readonly TcpListener _listener;
 

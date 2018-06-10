@@ -150,20 +150,18 @@ namespace JsonRpcLib.Server
 
         private static object Invoke(object[] args, HandlerInfo info)
         {
-            object result = null;
             // Use reflection invoke instead of delegate because we have optional parameters
             if (info.Instance != null)
             {
                 // Instance function
-                result = info.Method.Invoke(info.Instance,
+                return info.Method.Invoke(info.Instance,
                     BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod | BindingFlags.CreateInstance, null, args, null);
             }
             else
             {
                 // Static function
-                result = info.Method.Invoke(null, BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod, null, args, null);
+                return info.Method.Invoke(null, BindingFlags.OptionalParamBinding | BindingFlags.InvokeMethod, null, args, null);
             }
-            return result;
         }
 
         private void FixParameters(HandlerInfo info, ref object[] args)
@@ -172,8 +170,8 @@ namespace JsonRpcLib.Server
                 throw new ArgumentNullException(nameof(info));
             if(info.Parameters == null)
                 throw new ArgumentException("info.Parameters can not be null");
-			if (args == null)
-				return;
+            if (args == null)
+                return;
 
             int neededArgs = info.Parameters.Count(x => !x.HasDefaultValue);
             if (neededArgs > args.Length)
@@ -185,47 +183,46 @@ namespace JsonRpcLib.Server
                     continue;  // Skip
 
                 var inputType = args[i].GetType();
-				var outputType = info.Parameters[i].ParameterType;
+                var outputType = info.Parameters[i].ParameterType;
 
                 if (inputType == outputType)
                     continue;  // Already the right type
 
-				if (inputType.IsPrimitive)
-				{
-					// Cast primitives
-					args[i] = Convert.ChangeType(args[i], outputType);
-				}
-				else if (inputType == typeof(string))
-				{
-					// Convert string to TimeSpan
-					if (outputType == typeof(TimeSpan))
-						args[i] = TimeSpan.Parse((string)args[i]);
-					// Convert string to DateTime
-					else if (outputType == typeof(DateTime))
-						args[i] = DateTime.Parse((string)args[i]);
-					// Convert string to DateTimeOffset
-					else if (outputType == typeof(DateTimeOffset))
-						args[i] = DateTimeOffset.Parse((string)args[i]);
-				}
-				else if (inputType == typeof(List<object>))
-				{
-					var list = (List<object>)args[i];
-					args[i] = MakeTypedArray(outputType.GetElementType(), list);
-				}
-				//else if (at == typeof(JArray))
-				//{
-				//    // Convert array to a real typed array
-				//    var a = args[i] as JArray;
-				//    args[i] = a.ToObject(outputType);
-				//}
-				else
-				{
-					Serializer.ConvertToConcreteType(inputType, outputType, ref args[i]);
-				}
+                if (inputType.IsPrimitive)
+                {
+                    // Cast primitives
+                    args[i] = Convert.ChangeType(args[i], outputType);
+                }
+                else if (inputType == typeof(string))
+                {
+                    // Convert string to TimeSpan
+                    if (outputType == typeof(TimeSpan))
+                        args[i] = TimeSpan.Parse((string)args[i]);
+                    // Convert string to DateTime
+                    else if (outputType == typeof(DateTime))
+                        args[i] = DateTime.Parse((string)args[i]);
+                    // Convert string to DateTimeOffset
+                    else if (outputType == typeof(DateTimeOffset))
+                        args[i] = DateTimeOffset.Parse((string)args[i]);
+                }
+                else if (inputType == typeof(List<object>))
+                {
+                    var list = (List<object>)args[i];
+                    args[i] = MakeTypedArray(outputType.GetElementType(), list);
+                }
+                //else if (at == typeof(JArray))
+                //{
+                //    // Convert array to a real typed array
+                //    var a = args[i] as JArray;
+                //    args[i] = a.ToObject(outputType);
+                //}
+                else
+                {
+                    Serializer.ConvertToConcreteType(inputType, outputType, ref args[i]);
+                }
+            }
 
-			}
-
-			if (args.Length < info.Parameters.Length)
+            if (args.Length < info.Parameters.Length)
             {
                 // Missing optional arguments are set to Type.Missing
                 args = args.Concat(Enumerable.Repeat(Type.Missing, info.Parameters.Length - args.Length)).ToArray();
@@ -234,7 +231,7 @@ namespace JsonRpcLib.Server
 
         /// <summary>
         /// Create a new array with the target element type and copy values over
-        /// </summary> 
+        /// </summary>
         private static Array MakeTypedArray(Type elementType, List<object> list)
         {
             if (list == null)

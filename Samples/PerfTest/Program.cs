@@ -9,7 +9,7 @@ using JsonRpcLib.Client;
 
 namespace PerfTest
 {
-	static class Program
+    static class Program
     {
         private const int UPDATE_DELAY_IN_MS = 100;
 
@@ -23,7 +23,6 @@ namespace PerfTest
 
             // Make progress updates smoother
             Thread.CurrentThread.Priority = ThreadPriority.AboveNormal;
-
 
             using (var server = new MyServer(port))
             {
@@ -40,7 +39,6 @@ namespace PerfTest
                 RunLatencyTest(true).Wait();
                 RunNotifyTest(threadCount, threadCount*10000, clients, true);
                 RunInvokeTest(threadCount, threadCount*1000, clients, true);
-
 
                 Console.WriteLine($"Running the tests...\n");
                 RunLatencyTest().Wait();

@@ -7,7 +7,7 @@ using JsonRpcLib.Server;
 
 namespace Benchmark
 {
-	public class MyServer : JsonRpcServer
+    public class MyServer : JsonRpcServer
     {
         readonly SocketListener _listener;
         public ManualResetEventSlim ClientConnected { get; } = new ManualResetEventSlim();

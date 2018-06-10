@@ -10,9 +10,9 @@ using Xunit;
 
 namespace Tests
 {
-	public class InvokeStatic : Base
+    public class InvokeStatic : Base
     {
-		class StaticHandler
+        class StaticHandler
         {
             public static void Function1()
             {

@@ -10,9 +10,9 @@ using Xunit;
 
 namespace Tests
 {
-	public class InvokeInstance : Base
+    public class InvokeInstance : Base
     {
-		[Fact]
+        [Fact]
         public void Call_GivenTypesArgs()
         {
             Response<object> reply = default;

@@ -9,55 +9,55 @@ namespace JsonRpcLib
 {
     internal static class Serializer
     {
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static byte[] Serialize<T>(T input) where T : new()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte[] Serialize<T>(T input) where T : new()
         {
             return Utf8.Serialize<T>(input);
-		}
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static void Serialize<T>(Stream stream, T input)
-        {
-			Utf8.SerializeAsync<T>(input, stream).GetAwaiter().GetResult();
         }
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static T Deserialize<T>(string json) where T : new()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Serialize<T>(Stream stream, T input)
         {
-			return Utf8.Deserialize<T>(MemoryMarshal.AsBytes(json.AsSpan()));
+            Utf8.SerializeAsync<T>(input, stream).GetAwaiter().GetResult();
         }
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static T Deserialize<T>(Span<byte> span)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T Deserialize<T>(string json) where T : new()
         {
-			return Utf8.Deserialize<T>(span);
-		}
+            return Utf8.Deserialize<T>(MemoryMarshal.AsBytes(json.AsSpan()));
+        }
 
-		public static bool ConvertToConcreteType(Type inputType, Type outputType, ref object value)
-		{
-			if(typeof(SpanJsonDynamic<byte>).IsAssignableFrom(inputType))
-			{
-				var v = (SpanJsonDynamic<byte>)value;
-				return v.TryConvert(outputType, out value);
-			}
-			else if (inputType == typeof(SpanJsonDynamicArray<byte>))
-			{
-				var nt = (SpanJsonDynamicArray<byte>)value;
-				var et = outputType.GetElementType();
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T Deserialize<T>(Span<byte> span)
+        {
+            return Utf8.Deserialize<T>(span);
+        }
 
-				var a = Array.CreateInstance(et, nt.Length);
-				int i = 0;
-				foreach (SpanJsonDynamic<byte> ev in nt)
-				{
-					if (!ev.TryConvert(et, out object v))
-						return false;
-					a.SetValue(v, i++);
-				}
+        public static bool ConvertToConcreteType(Type inputType, Type outputType, ref object value)
+        {
+            if(typeof(SpanJsonDynamic<byte>).IsAssignableFrom(inputType))
+            {
+                var v = (SpanJsonDynamic<byte>)value;
+                return v.TryConvert(outputType, out value);
+            }
+            else if (inputType == typeof(SpanJsonDynamicArray<byte>))
+            {
+                var nt = (SpanJsonDynamicArray<byte>)value;
+                var et = outputType.GetElementType();
 
-				value = a;
-				return true;
-			}
-			return false;
-		}
-	}
+                var a = Array.CreateInstance(et, nt.Length);
+                int i = 0;
+                foreach (SpanJsonDynamic<byte> ev in nt)
+                {
+                    if (!ev.TryConvert(et, out object v))
+                        return false;
+                    a.SetValue(v, i++);
+                }
+
+                value = a;
+                return true;
+            }
+            return false;
+        }
+    }
 }

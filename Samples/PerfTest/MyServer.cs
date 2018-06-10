@@ -10,7 +10,7 @@ namespace PerfTest
     {
         readonly SocketListener _listener;
         public ManualResetEventSlim ClientConnected { get; } = new ManualResetEventSlim();
-        TaskCompletionSource<int> _tcs = new TaskCompletionSource<int>();
+        readonly TaskCompletionSource<int> _tcs = new TaskCompletionSource<int>();
 
         public MyServer(int port)
         {

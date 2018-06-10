@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Tests
 {
-	public class Connection : Base
+    public class Connection : Base
     {
         static int _nextPort = 43556;
 
