@@ -35,16 +35,13 @@ namespace JsonRpcLib
 
         public static bool ConvertToConcreteType(Type inputType, Type outputType, ref object value)
         {
-            if(typeof(SpanJsonDynamic<byte>).IsAssignableFrom(inputType))
+            if(value is SpanJsonDynamic<byte> sjd)
             {
-                var v = (SpanJsonDynamic<byte>)value;
-                return v.TryConvert(outputType, out value);
+                return sjd.TryConvert(outputType, out value);
             }
-            else if (inputType == typeof(SpanJsonDynamicArray<byte>))
+            else if (value is SpanJsonDynamicArray<byte> nt)
             {
-                var nt = (SpanJsonDynamicArray<byte>)value;
                 var et = outputType.GetElementType();
-
                 var a = Array.CreateInstance(et, nt.Length);
                 int i = 0;
                 foreach (SpanJsonDynamic<byte> ev in nt)
