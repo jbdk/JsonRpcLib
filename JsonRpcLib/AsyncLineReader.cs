@@ -44,9 +44,9 @@ namespace JsonRpcLib
                 try
                 {
                     // Extract each line from the input
-                    while (input.TrySliceTo((byte)'\n', out var slice, out var cursor))
+                    while (TryGetFrame(input, out var slice, out var cursor))
                     {
-                        input = input.Slice(cursor).Slice(1);
+                        input = input.Slice(cursor);
 
                         int size = (int)slice.Length;
                         var block = s_pool.Rent(size);
@@ -73,6 +73,24 @@ namespace JsonRpcLib
             }
 
             _reader.Complete();
+        }
+
+        static bool TryGetFrame(ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> slice, out SequencePosition cursor)
+        {
+            // find the end-of-line marker
+            var eol = buffer.PositionOf((byte)'\n');
+            if (eol == null)
+            {
+                slice = default;
+                cursor = default;
+                return false;
+            }
+
+            // read past the line-ending
+            cursor = buffer.GetPosition(1, eol.Value);
+            // consume the data
+            slice = buffer.Slice(0, eol.Value);
+            return true;
         }
 
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>

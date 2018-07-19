@@ -14,5 +14,17 @@ namespace JsonRpcLib
         {
             Code = error.Code;
         }
+
+        public JsonRpcException() : base()
+        {
+        }
+
+        private JsonRpcException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) : base(info, context)
+        {
+        }
+
+        public JsonRpcException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
     }
 }

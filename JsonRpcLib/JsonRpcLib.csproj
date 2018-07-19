@@ -11,19 +11,26 @@
     <Description>C# DotNetCore 2.1+ Client/Server Json RPC library 
 Using Span&lt;T&gt;, Memory&lt;T&gt; and IO pipelines</Description>
     <PackageTags>JsonRpc</PackageTags>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SpanJson" Version="1.0.3" />
-    <PackageReference Include="System.IO.Pipelines.Extensions" Version="0.1.0-preview2-180503-5" />
+    <PackageReference Include="coverlet.msbuild" Version="2.1.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="SpanJson" Version="1.2.0" />
+    <!-- <PackageReference Include="System.IO.Pipelines.Extensions" Version="0.1.0-preview2-180503-5" /> -->
     <PackageReference Include="System.IO.Pipelines.Networking.Sockets" Version="0.1.0-preview2-180503-5" />
     <PackageReference Include="System.IO.Pipelines.Text.Primitives" Version="0.1.0-preview2-180503-5" />
   </ItemGroup>

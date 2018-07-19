@@ -51,10 +51,7 @@ namespace JsonRpcLib.Server
                 return false;
             }
 
-#if false
-            DummyHandler(client, buffer.Span);
-#else
-
+#if true
             try
             {
                 var request = Serializer.Deserialize<Request>(buffer.Span);
@@ -64,23 +61,13 @@ namespace JsonRpcLib.Server
             {
                 Debug.WriteLine("Exception in JsonRpcServer.ProcessClientMessage(): " + ex.Message);
             }
-
-            IncommingMessageHook?.Invoke(client, buffer);
+#else
+            DummyHandler(client, buffer.Span);
 #endif
 
+            IncommingMessageHook?.Invoke(client, buffer);
+
             return true;    // Continue receiving data from client
-        }
-
-        private void DummyHandler(IClient client, ReadOnlySpan<byte> span)
-        {
-            var s = _encoding.GetString(span);
-
-            int a = s.IndexOf("\"id\":") + 5;
-            int b = 0;
-            while (char.IsDigit(s[a + b]))
-                b++;
-            int id = int.Parse(s.AsSpan(a, b));
-            client.WriteString($"{{\"jsonrpc\":\"2.0\",\"id\":{id}}}");
         }
 
         private void HandleDisconnect(IClient client)
@@ -102,5 +89,19 @@ namespace JsonRpcLib.Server
 
             _disposed = true;
         }
+
+#if false
+        private void DummyHandler(IClient client, ReadOnlySpan<byte> span)
+        {
+            var s = _encoding.GetString(span);
+
+            int a = s.IndexOf("\"id\":") + 5;
+            int b = 0;
+            while (char.IsDigit(s[a + b]))
+                b++;
+            int id = int.Parse(s.AsSpan(a, b));
+            client.WriteString($"{{\"jsonrpc\":\"2.0\",\"id\":{id}}}");
+        }
+#endif
     }
 }
