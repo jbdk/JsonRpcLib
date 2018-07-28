@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Diagnostics;
 using System.IO.Pipelines;
 using System.IO.Pipelines.Text.Primitives;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace JsonRpcLib
@@ -44,7 +43,7 @@ namespace JsonRpcLib
                 try
                 {
                     // Extract each line from the input
-                    while (TryGetFrame(input, out var slice, out var cursor))
+                    while (TryGetNextLine(input, out var slice, out var cursor))
                     {
                         input = input.Slice(cursor);
 
@@ -75,7 +74,7 @@ namespace JsonRpcLib
             _reader.Complete();
         }
 
-        static bool TryGetFrame(ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> slice, out SequencePosition cursor)
+        bool TryGetNextLine(in ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> slice, out SequencePosition cursor)
         {
             // find the end-of-line marker
             var eol = buffer.PositionOf((byte)'\n');
